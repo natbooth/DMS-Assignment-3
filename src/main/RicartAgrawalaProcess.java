@@ -46,7 +46,7 @@ public class RicartAgrawalaProcess {
     private int ownRequestTimestamp; // used when ownRequest
     private boolean inCriticalSection; // whether currently in cs
     private boolean stopRequested;
-    public static final int PORT = 8891; // some unused port number
+    public static final int PORT = 8890; // some unused port number
     public static final String REQUEST = "request";
     public static final String OKAY = "okay";
     public static final String TIMESTAMP = "timestamp";
