@@ -22,7 +22,8 @@ public class Server {
     //public static final String OKAY = "okay";
     //public static final String TIMESTAMP = "timestamp";
     //public static final String REQUESTID = "requestID";
-        public static final String SERVER_CONNECT = "server_connect";
+    public static final String SERVER_CONNECT = "server_connect";
+    public static final String SERVER_BROADCAST = "server_broadcast";
 
     public Server() {
 
@@ -137,6 +138,15 @@ public class Server {
         }
     }
 
+    public void broadcastMessage(String message) {
+
+        synchronized (connections) {
+            for (Connection conn : connections) {
+                conn.sendMessage(SERVER_BROADCAST + " " + message);
+            }
+        }
+    }
+
     public void receiveMessage(String message, Connection connection) {
 
         if (message.startsWith(SERVER_CONNECT)) {
@@ -161,6 +171,9 @@ public class Server {
             } else {
                 System.out.println("Allredy connected to server at " + requestedAddress);
             }
+        } else if (message.startsWith(SERVER_BROADCAST)) {
+            System.out.println("Broadcast message from " + connection.getAddress() + ": " + message.substring(SERVER_CONNECT.length()).trim());
+
         } else {
             System.out.println("Unknown type of message received: " + message);
         }

@@ -41,6 +41,8 @@ public class Main {
             if ("exit".equalsIgnoreCase(line.trim())) {
                 stopRequested = true;
                 server.requestStop();
+            }else{
+                server.broadcastMessage(line);
             }
         }
         java.lang.System.out.println("Exiting process");
