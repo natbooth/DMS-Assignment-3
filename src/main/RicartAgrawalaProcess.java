@@ -1,6 +1,5 @@
 package main;
 
-
 /**
  * A class that demonstrates the Ricart-Agrawala algorithm for distributed
  * mutual exclusion, representing a single process in a distributed system. Each
@@ -37,15 +36,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;//synchronized queue
 
 public class RicartAgrawalaProcess {
 
-    private Queue<ProcessConnection> queue; // request queue
-    private List<ProcessConnection> connections; // all other processes
+    private Queue<Connection> queue; // request queue
+    private List<Connection> connections; // all other processes
     private String ownAddress;
     private int timestamp; // current Lamport timestamp
     private int pendingReplies; //no. replies pending before cs allowed
     private boolean ownRequest; //whether this process has requested cs
     private int ownRequestTimestamp; // used when ownRequest
     private boolean inCriticalSection; // whether currently in cs
-    private boolean stopRequested;
+    public boolean stopRequested;
     public static final int PORT = 8890; // some unused port number
     public static final String REQUEST = "request";
     public static final String OKAY = "okay";
@@ -53,8 +52,8 @@ public class RicartAgrawalaProcess {
     public static final String JOIN = "join";
 
     public RicartAgrawalaProcess() {
-        queue = new ConcurrentLinkedQueue<ProcessConnection>();
-        connections = new ArrayList<ProcessConnection>();
+        queue = new ConcurrentLinkedQueue<Connection>();
+        connections = new ArrayList<Connection>();
         try {
             ownAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
@@ -68,31 +67,26 @@ public class RicartAgrawalaProcess {
         stopRequested = false;
     }
 
-   // start the server if not already started and repeatedly listen
-    // for client connections until stop requested
+    // start the server if not already started and repeatedly listen for client connections until stop requested
     public void startServer() {
         stopRequested = false;
         ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(PORT);
             serverSocket.setSoTimeout(1000); // timeout for accept
-            System.out.println("Server started at " + ownAddress
-                    + " on port " + PORT);
+            System.out.println("Server started at " + ownAddress + " on port " + PORT);
         } catch (IOException e) {
             System.err.println("Server can't listen on port: " + e);
             System.exit(-1);
         }
-        while (!stopRequested) {  // block until the next client requests a connection
-            // or else the server socket timeout is reached
+        while (!stopRequested) {  // block until the next client requests a connection or else the server socket timeout is reached
             try {
                 Socket socket = serverSocket.accept();
-                System.out.println("Server connection made with "
-                        + socket.getInetAddress().getHostAddress());
+                System.out.println("Server connection made with " + socket.getInetAddress().getHostAddress());
                 // start a connection with this socket
-                ProcessConnection connection = new ProcessConnection(socket);
-            // send the new client process a series of join messages
-                // so that it can connect to other processes in system
-                for (ProcessConnection conn : connections) {
+                Connection connection = new Connection(socket);
+                // send the new client process a series of join messages so that it can connect to other processes in system
+                for (Connection conn : connections) {
                     connection.sendMessage(JOIN + " " + conn.getAddress());
                 }
                 synchronized (connections) {
@@ -113,15 +107,13 @@ public class RicartAgrawalaProcess {
         System.out.println("Server finishing");
     }
 
-   // create a client connection with specified IP address where there
-    // should be a running server process
+    // create a client connection with specified IP address where there should be a running server process
     public void connect(String address) {
         try {
             Socket socket = new Socket(address, PORT);
-            System.out.println("Client connection made with "
-                    + socket.getInetAddress().getHostAddress());
+            System.out.println("Client connection made with " + socket.getInetAddress().getHostAddress());
             // start a connection with this socket
-            ProcessConnection connection = new ProcessConnection(socket);
+            Connection connection = new Connection(socket);
             synchronized (connections) {
                 connections.add(connection);
             }
@@ -132,8 +124,7 @@ public class RicartAgrawalaProcess {
         }
     }
 
-    public void receiveMessage(String message,
-            ProcessConnection connection) {
+    public void receiveMessage(String message, Connection connection) {
         if (message.startsWith(REQUEST)) {  // get the timestamp with message
             try {
                 int otherTimestamp = Integer.parseInt(message.substring(REQUEST.length()).trim());
@@ -142,11 +133,8 @@ public class RicartAgrawalaProcess {
                     queue.offer(connection);
                 } else if (!ownRequest) {
                     connection.sendMessage(OKAY + " " + getTime());
-                } else {  // this process is also waiting to enter the critical
-                    // section, determine which process goes first
-                    if ((otherTimestamp < ownRequestTimestamp)
-                            || ((otherTimestamp == ownRequestTimestamp)
-                            && (connection.getAddress().compareTo(ownAddress) < 0))) {
+                } else {  // this process is also waiting to enter the critical section, determine which process goes first
+                    if ((otherTimestamp < ownRequestTimestamp) || ((otherTimestamp == ownRequestTimestamp) && (connection.getAddress().compareTo(ownAddress) < 0))) {
                         connection.sendMessage(OKAY + " " + getTime());
                     } else {
                         queue.offer(connection);
@@ -187,11 +175,10 @@ public class RicartAgrawalaProcess {
             }
         } else if (message.startsWith(JOIN)) {  // get the IP address included with the join message
             String address = message.substring(JOIN.length()).trim();
-         // check whether there is already a connection with this
-            // IP address, either this connection or another in list
+            // check whether there is already a connection with this IP address, either this connection or another in list
             boolean alreadyConnected = connection.getAddress().equals(address);
             synchronized (connections) {
-                for (ProcessConnection conn : connections) {
+                for (Connection conn : connections) {
                     if (conn.getAddress().equals(address)) {
                         alreadyConnected = true;
                     }
@@ -201,8 +188,7 @@ public class RicartAgrawalaProcess {
                 connect(address);
             }
         } else {
-            System.out.println("Unknown type of message received: "
-                    + message);
+            System.out.println("Unknown type of message received: " + message);
         }
     }
 
@@ -212,7 +198,7 @@ public class RicartAgrawalaProcess {
             ownRequestTimestamp = timestamp;
             synchronized (connections) {  // send request to all other processes
                 pendingReplies = 0;
-                for (ProcessConnection connection : connections) {
+                for (Connection connection : connections) {
                     connection.sendMessage(REQUEST + " " + getTime());
                     pendingReplies++;
                 }
@@ -223,13 +209,12 @@ public class RicartAgrawalaProcess {
     public void exitCriticalSection() {
         ownRequest = false;
         while (queue.peek() != null) {
-            ProcessConnection connection = queue.poll();
+            Connection connection = queue.poll();
             connection.sendMessage(OKAY + " " + getTime());
         }
     }
 
-   // stops server AFTER the next client connection has been made
-    // or timeout is reached
+    // stops server AFTER the next client connection has been made or timeout is reached
     public void requestStop() {
         stopRequested = true;
     }
@@ -246,113 +231,4 @@ public class RicartAgrawalaProcess {
         timestamp = Math.max(timestamp, otherTimestamp);
     }
 
-    public static void main(String[] args) {
-        final RicartAgrawalaProcess process = new RicartAgrawalaProcess();
-        Scanner keyboardInput = new Scanner(System.in);
-        System.out.print("Enter IP address of process in system "
-                + " (or enter for first process): ");
-        String address = keyboardInput.nextLine().trim();
-        if (address == null || address.length() == 0) {
-            System.out.println("Starting as first process in system");
-        } else {
-            System.out.println("Connecting to existing system");
-            process.connect(address);
-        }
-        // start and run server in separate thread
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                process.startServer();
-            }
-        });
-        thread.start();
-        // use keyboard input for requesting access to critical section
-        System.out.println("Press enter to enter critical section "
-                + "(or done to abort)");
-        while (!process.stopRequested) {
-            String line = keyboardInput.nextLine();
-            if ("done".equalsIgnoreCase(line.trim())) {
-                process.stopRequested = true;
-            } else {
-                process.requestCriticalSection();
-            }
-        }
-        System.out.println("Exiting process");
-    }
-
-   // inner class that represents a connection with one other process
-    // in the distributed system
-    private class ProcessConnection implements Runnable {
-
-        private Socket socket;
-        private PrintWriter pw;
-        private BufferedReader br;
-
-        public ProcessConnection(Socket socket) {
-            this.socket = socket;
-            try {
-                socket.setSoTimeout(500); // 0.5 second timeout
-                // create an autoflush output stream for the socket
-                pw = new PrintWriter(socket.getOutputStream(), true);
-                // create a buffered input stream for this socket
-                br = new BufferedReader(new InputStreamReader(
-                        socket.getInputStream()));
-            } catch (SocketException e) {
-                System.out.println("Unable to set socket timeout: " + e);
-            } catch (IOException e) {
-                System.out.println("Unable to open streams: " + e);
-            }
-        }
-
-        public void sendMessage(String message) {
-            System.out.println("Sending message: " + message
-                    + "; Destination: " + getAddress());
-            pw.println(message);
-            incrementTime();
-        }
-
-        public String getAddress() {
-            return socket.getInetAddress().getHostAddress();
-        }
-
-        public void run() {
-            try {  // listen for messages until stopRequested
-                String clientRequest;
-                do {  // wait for message or until timeout is reached
-                    try {
-                        final String message = br.readLine().trim(); //block
-                        incrementTime();
-                        // then pass message to process to handle
-                        Thread thread = new Thread(new Runnable() {
-                            public void run() {
-                                System.out.println("Received message: "
-                                        + message + "; Sender: " + getAddress());
-                                receiveMessage(message,
-                                        ProcessConnection.this);
-                            }
-                        });
-                        thread.start();
-                    } catch (SocketTimeoutException e) {  // ignore and try again unless stopRequested
-                    }
-                } while (!stopRequested);
-                System.out.println("Closing connection with "
-                        + socket.getInetAddress());
-            } catch (IOException e) {
-                System.err.println("Server error: " + e);
-            } finally {
-                try {
-                    if (pw != null) {
-                        pw.close();
-                    }
-                    if (br != null) {
-                        br.close();
-                    }
-                    if (socket != null) {
-                        socket.close();
-                    }
-                } catch (IOException e) {
-                    System.err.println("Failed to close streams: " + e);
-                }
-            }
-        }
-    }
 }
