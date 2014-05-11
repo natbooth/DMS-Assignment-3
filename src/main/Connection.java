@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package main;
 
 import java.io.BufferedReader;
@@ -50,7 +45,6 @@ public class Connection implements Runnable {
 //    public int getProcessID() {
 //        return this.processID;
 //    }
-
     public String getAddress() {
         return this.address;
     }
@@ -74,7 +68,6 @@ public class Connection implements Runnable {
                     Thread thread = new Thread(new Runnable() {
                         public void run() {
                             System.out.println("Received message: " + message + "; Sender: " + getAddress());
-                            // DO SOMETHING WITH RECEIVED MESSAGE
                             server.receiveMessage(message, Connection.this);
                         }
                     });
@@ -84,7 +77,14 @@ public class Connection implements Runnable {
             } while (!stopRequested);
             System.out.println("Closing connection with " + socket.getInetAddress());
         } catch (IOException e) {
+            
+            // Server Disconnected
             System.err.println("Server error: " + e);
+            
+            // Remove from connection list
+            server.disconnect(Connection.this);
+            System.err.println("Disconnected from " + address);
+
         } finally {
             try {
                 if (pw != null) {

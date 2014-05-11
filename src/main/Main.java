@@ -41,6 +41,8 @@ public class Main {
             if ("exit".equalsIgnoreCase(line.trim())) {
                 stopRequested = true;
                 server.requestStop();
+            }else if ("disconnect".equalsIgnoreCase(line.trim())) {
+                server.disconnect(null);
             }else{
                 server.broadcastMessage(line);
             }
