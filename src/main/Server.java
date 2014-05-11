@@ -88,7 +88,7 @@ public class Server {
                 System.out.println("Server connection made with " + socket.getInetAddress().getHostAddress());
 
                 // Create Connection
-                Connection connection = new Connection(socket);
+                Connection connection = new Connection(this, socket);
 
                 // Send the new client process a series of join messages so that it can connect to other processes in system
                 for (Connection conn : connections) {
@@ -125,7 +125,7 @@ public class Server {
             System.out.println("Client connection made with " + socket.getInetAddress().getHostAddress());
 
             // Create connection and add to list
-            Connection connection = new Connection(socket);
+            Connection connection = new Connection(this, socket);
             synchronized (connections) {
                 connections.add(connection);
             }

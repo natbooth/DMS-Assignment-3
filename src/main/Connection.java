@@ -20,14 +20,16 @@ import java.net.SocketTimeoutException;
 public class Connection implements Runnable {
 
     //private int processID;
+    private Server server;
     private String address;
     private Socket socket;
     private PrintWriter pw;
     private BufferedReader br;
     private boolean stopRequested;
 
-    public Connection(Socket socket) {
+    public Connection(Server server, Socket socket) {
         //this.processID = processID;
+        this.server = server;
         this.socket = socket;
         this.address = socket.getInetAddress().getHostAddress();
         this.stopRequested = false;
@@ -73,7 +75,7 @@ public class Connection implements Runnable {
                         public void run() {
                             System.out.println("Received message: " + message + "; Sender: " + getAddress());
                             // DO SOMETHING WITH RECEIVED MESSAGE
-                            //receiveMessage(message, ProcessConnection.this);
+                            server.receiveMessage(message, Connection.this);
                         }
                     });
                     thread.start();

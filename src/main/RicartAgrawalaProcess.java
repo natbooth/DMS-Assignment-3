@@ -84,7 +84,7 @@ public class RicartAgrawalaProcess {
                 Socket socket = serverSocket.accept();
                 System.out.println("Server connection made with " + socket.getInetAddress().getHostAddress());
                 // start a connection with this socket
-                Connection connection = new Connection(socket);
+                Connection connection = new Connection(null, socket);
                 // send the new client process a series of join messages so that it can connect to other processes in system
                 for (Connection conn : connections) {
                     connection.sendMessage(JOIN + " " + conn.getAddress());
@@ -113,7 +113,7 @@ public class RicartAgrawalaProcess {
             Socket socket = new Socket(address, PORT);
             System.out.println("Client connection made with " + socket.getInetAddress().getHostAddress());
             // start a connection with this socket
-            Connection connection = new Connection(socket);
+            Connection connection = new Connection(null, socket);
             synchronized (connections) {
                 connections.add(connection);
             }
