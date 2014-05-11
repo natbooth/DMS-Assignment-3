@@ -15,7 +15,7 @@ public class Server {
     private String address;
     private int port;
     private List<Connection> connections;
-    
+
     private boolean stopRequested;
 
     //public static final String REQUEST = "request";
@@ -23,11 +23,10 @@ public class Server {
     //public static final String TIMESTAMP = "timestamp";
     //public static final String REQUESTID = "requestID";
     public static final String SERVER_CONNECT = "server_connect";
-    public static final String SERVER_DISCONNECT = "server_disconnect";
     public static final String SERVER_BROADCAST = "server_broadcast";
-    
+
     public Server() {
-        
+
         this.connections = new ArrayList<Connection>();
 
         // Get address of localhost
@@ -39,15 +38,15 @@ public class Server {
 
         // Set port number to deafult
         this.port = 8890;
-        
+
         this.stopRequested = false;
-        
+
     }
-    
+
     public int getPort() {
         return port;
     }
-    
+
     public void setPort(int port) {
         this.port = port;
     }
@@ -104,7 +103,7 @@ public class Server {
                 // Start listning thread for connection
                 Thread thread = new Thread(connection);
                 thread.start();
-                
+
             } catch (SocketTimeoutException e) {  // ignore and try again
             } catch (IOException e) {
                 System.err.println("Can't accept client connection: " + e);
@@ -138,40 +137,29 @@ public class Server {
             System.out.println("Unable to open client connection: " + e);
         }
     }
-    
+
     public void disconnect(Connection connection) {
-        // If connection is null disconnect all
         if (connection == null) {
-            for (Connection conn : connections) {
-                // Send disconnect message to server, request stop and remove from list
-                conn.sendMessage(SERVER_DISCONNECT);
-                conn.requestStop();
-                synchronized (connections) {
-                    connections.remove(conn);
-                }
-            }
-        } else {
-            // Send disconnect message to server, request stop and remove from list
-            connection.sendMessage(SERVER_DISCONNECT);
-            connection.requestStop();
-            synchronized (connections) {
-                connections.remove(connection);
-            }
+            connection = this.connections.get(0);
         }
-        
+        // Request stop and remove from list
+        connection.requestStop();
+        synchronized (connections) {
+            connections.remove(connection);
+        }
     }
-    
+
     public void broadcastMessage(String message) {
-        
+
         synchronized (connections) {
             for (Connection conn : connections) {
                 conn.sendMessage(SERVER_BROADCAST + " " + message);
             }
         }
     }
-    
+
     public void receiveMessage(String message, Connection connection) {
-        
+
         if (message.startsWith(SERVER_CONNECT)) {
             // Get the requested address of proces connection that wants to join
             String requestedAddress = message.substring(SERVER_CONNECT.length()).trim();
@@ -194,15 +182,12 @@ public class Server {
             } else {
                 System.out.println("Allredy connected to server at " + requestedAddress);
             }
-        } else if (message.startsWith(SERVER_DISCONNECT)) {
-            System.out.println("Disconnecting from " + connection.getAddress() + ": " + message.substring(SERVER_BROADCAST.length()).trim());
-            this.disconnect(connection);
         } else if (message.startsWith(SERVER_BROADCAST)) {
             System.out.println("Broadcast message from " + connection.getAddress() + ": " + message.substring(SERVER_BROADCAST.length()).trim());
-            
+
         } else {
             System.out.println("Unknown type of message received: " + message);
         }
     }
-    
+
 }
