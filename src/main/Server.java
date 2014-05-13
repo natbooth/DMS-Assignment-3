@@ -227,11 +227,9 @@ public class Server {
         } else if (message.startsWith(SERVER_BROADCAST)) {
             System.out.println("Broadcast message from " + connection.getAddress() + ": " + message.substring(SERVER_BROADCAST.length()).trim());
         } else if (message.startsWith(SERVER_SETPROCESSID)) {
-            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_SETPROCESSID.length()).trim());
             this.setProcessID(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
         } else if (message.startsWith(SERVER_PROCESSID)) {
-            connection.setProcessID(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
-            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_PROCESSID.length()).trim());
+            connection.setProcessID(Integer.parseInt(message.substring(SERVER_PROCESSID.length()).trim()));
         } else if (message.startsWith(SERVER_COORDINATOR)) {
             // Set server coordinator
             for (Connection conn : connections) {
@@ -239,11 +237,8 @@ public class Server {
                     conn.setCoordinator(true);
                 }
             }
-            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_COORDINATOR.length()).trim());
         } else if (message.startsWith(SERVER_TIMESTAMP)) {
-            connection.setTimestamp(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
-            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_TIMESTAMP.length()).trim());
-            
+            connection.setTimestamp(Integer.parseInt(message.substring(SERVER_TIMESTAMP.length()).trim())); 
         } else {
             System.out.println("Unknown type of message received: " + message);
         }
