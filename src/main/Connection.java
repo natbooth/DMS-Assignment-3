@@ -14,17 +14,24 @@ import java.net.SocketTimeoutException;
  */
 public class Connection implements Runnable {
 
-    //private int processID;
+    // Reffrence to local server for communication
     private Server server;
+    private int processID;
+    private boolean coordinator;
+    private int timestamp;
+    private boolean down;
     private String address;
     private Socket socket;
     private PrintWriter pw;
     private BufferedReader br;
     private boolean stopRequested;
 
-    public Connection(Server server, Socket socket) {
-        //this.processID = processID;
+    public Connection(Server server, int processID, boolean coordinator, int timestamp, Socket socket) {
         this.server = server;
+        this.processID = processID;
+        this.coordinator = coordinator;
+        this.timestamp = timestamp;
+        this.down = false;
         this.socket = socket;
         this.address = socket.getInetAddress().getHostAddress();
         this.stopRequested = false;
@@ -42,9 +49,39 @@ public class Connection implements Runnable {
         }
     }
 
-//    public int getProcessID() {
-//        return this.processID;
-//    }
+    // Getter and Setter Methods
+    public int getProcessID() {
+        return this.processID;
+    }
+
+    public void setProcessID(int processID) {
+        this.processID = processID;
+    }
+
+    public boolean isCoordinator() {
+        return coordinator;
+    }
+
+    public void setCoordinator(boolean coordinator) {
+        this.coordinator = coordinator;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public boolean isDown() {
+        return down;
+    }
+
+    public void setDown(boolean down) {
+        this.down = down;
+    }
+
     public String getAddress() {
         return this.address;
     }
@@ -53,6 +90,7 @@ public class Connection implements Runnable {
         this.stopRequested = true;
     }
 
+    // Public Methods
     public void sendMessage(String message) {
         System.out.println("Sending message: " + message + "; Destination: " + getAddress());
         pw.println(message);
@@ -77,10 +115,10 @@ public class Connection implements Runnable {
             } while (!stopRequested);
             System.out.println("Closing connection with " + socket.getInetAddress());
         } catch (IOException e) {
-            
+
             // Server Disconnected
             System.err.println("Server error: " + e);
-            
+
             // Remove from connection list
             server.disconnect(Connection.this);
             System.err.println("Disconnected from " + address);

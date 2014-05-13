@@ -12,8 +12,6 @@ public class Main {
 
         final Server server = new Server();
 
-        boolean stopRequested = false;
-
         Scanner keyboardInput = new Scanner(java.lang.System.in);
 
         java.lang.System.out.print("Enter IP address of process in system (or enter for first process): ");
@@ -21,18 +19,26 @@ public class Main {
 
         if (address == null || address.length() == 0) {
             java.lang.System.out.println("Starting as first process in system");
+            // start and run server in separate thread
+            Thread thread = new Thread(new Runnable() {
+                public void run() {
+                    server.startServer(true);
+                }
+            });
+            thread.start();
         } else {
             java.lang.System.out.println("Connecting to existing system");
+            // start and run server in separate thread
+            Thread thread = new Thread(new Runnable() {
+                public void run() {
+                    server.startServer(false);
+                }
+            });
+            thread.start();
             server.connect(address);
         }
 
-        // start and run server in separate thread
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                server.startServer();
-            }
-        });
-        thread.start();
+        boolean stopRequested = false;
 
         // use keyboard input for requesting access to critical section
         java.lang.System.out.println("Type \"exit\" to abort)");
@@ -40,10 +46,10 @@ public class Main {
             String line = keyboardInput.nextLine();
             if ("exit".equalsIgnoreCase(line.trim())) {
                 stopRequested = true;
-                server.requestStop();
-            }else if ("disconnect".equalsIgnoreCase(line.trim())) {
+                server.stopServer();
+            } else if ("disconnect".equalsIgnoreCase(line.trim())) {
                 server.disconnect(null);
-            }else{
+            } else {
                 server.broadcastMessage(line);
             }
         }
