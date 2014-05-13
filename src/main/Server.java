@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
-
+    
     private int processID;
     private boolean coordinator;
     private int timestamp;
@@ -32,7 +32,7 @@ public class Server {
     public static final String ELECTION_ANNOUNCE = "election_announce";
     public static final String ELECTION_OK = "election_ok";
     public static final String ELECTION_COORDINATOR = "election_coordinator";
-
+    
     public Server() {
         this.timestamp = 0;
         // Get address of localhost
@@ -45,39 +45,39 @@ public class Server {
         this.port = 8890;
         this.stopRequested = false;
     }
-
+    
     public int getProcessID() {
         return processID;
     }
-
+    
     public void setProcessID(int processID) {
         this.processID = processID;
     }
-
+    
     public boolean isCoordinator() {
         return coordinator;
     }
-
+    
     public void setCoordinator(boolean coordinator) {
         this.coordinator = coordinator;
     }
-
+    
     public int getTimestamp() {
         return timestamp;
     }
-
+    
     public void setTimestamp(int timestamp) {
         this.timestamp = timestamp;
     }
-
+    
     public String getAddress() {
         return this.address;
     }
-
+    
     public int getPort() {
         return port;
     }
-
+    
     public void setPort(int port) {
         this.port = port;
     }
@@ -140,7 +140,7 @@ public class Server {
                 // Start listning thread for connection
                 Thread thread = new Thread(connection);
                 thread.start();
-
+                
             } catch (SocketTimeoutException e) {  // Catch timeout and continue
             } catch (IOException e) {
                 System.err.println("Can't accept client connection: " + e);
@@ -179,7 +179,7 @@ public class Server {
             System.out.println("Unable to open client connection: " + e);
         }
     }
-
+    
     public void disconnect(Connection connection) {
         if (connection == null) {
             connection = this.connections.get(0);
@@ -190,18 +190,18 @@ public class Server {
             connections.remove(connection);
         }
     }
-
+    
     public void broadcastMessage(String message) {
-
+        
         synchronized (connections) {
             for (Connection conn : connections) {
                 conn.sendMessage(SERVER_BROADCAST + " " + message);
             }
         }
     }
-
+    
     public void receiveMessage(String message, Connection connection) {
-
+        
         if (message.startsWith(SERVER_CONNECT)) {
             // Get the requested address of proces connection that wants to join
             String requestedAddress = message.substring(SERVER_CONNECT.length()).trim();
@@ -226,12 +226,29 @@ public class Server {
             }
         } else if (message.startsWith(SERVER_BROADCAST)) {
             System.out.println("Broadcast message from " + connection.getAddress() + ": " + message.substring(SERVER_BROADCAST.length()).trim());
-
+        } else if (message.startsWith(SERVER_SETPROCESSID)) {
+            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_SETPROCESSID.length()).trim());
+            this.setProcessID(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
+        } else if (message.startsWith(SERVER_PROCESSID)) {
+            connection.setProcessID(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
+            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_PROCESSID.length()).trim());
+        } else if (message.startsWith(SERVER_COORDINATOR)) {
+            // Set server coordinator
+            for (Connection conn : connections) {
+                if (conn.getProcessID() == Integer.parseInt(message.substring(SERVER_COORDINATOR.length()).trim())) {
+                    conn.setCoordinator(true);
+                }
+            }
+            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_COORDINATOR.length()).trim());
+        } else if (message.startsWith(SERVER_TIMESTAMP)) {
+            connection.setTimestamp(Integer.parseInt(message.substring(SERVER_SETPROCESSID.length()).trim()));
+            System.out.println("Message from " + connection.getAddress() + ": " + message.substring(SERVER_TIMESTAMP.length()).trim());
+            
         } else {
             System.out.println("Unknown type of message received: " + message);
         }
     }
-
+    
     private int getCoordinatorID() {
         // Check if this server is corordernator else check throug list of connections
         if (this.isCoordinator()) {
@@ -246,17 +263,17 @@ public class Server {
         // If no leader is found return -1
         return -1;
     }
-
+    
     private int getNewProcessID() {
-        int highestProcessID = 0;
-
+        int highestProcessID = this.getProcessID();
+        
         for (Connection connection : connections) {
             if (connection.getProcessID() > highestProcessID) {
                 highestProcessID = connection.getProcessID();
             }
         }
-
+        
         return highestProcessID + 1;
     }
-
+    
 }

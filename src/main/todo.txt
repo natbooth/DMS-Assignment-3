@@ -1,0 +1,2 @@
+DONE add receive messages for peer connection information
+complete election algorithm
