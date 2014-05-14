@@ -9,6 +9,9 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This is the server class.
+ */
 public class Server {
     
     private int processID;
