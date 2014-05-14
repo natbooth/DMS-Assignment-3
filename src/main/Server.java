@@ -6,14 +6,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is the server class.
  */
-public class Server {
+public class Server implements RMIClient {
     
+    private Map<Integer, Integer> vectorTimestamp;
     private int processID;
     private boolean coordinator;
     private int timestamp;
@@ -21,6 +25,8 @@ public class Server {
     private int port;
     private boolean stopRequested;
     private List<Connection> connections;
+    private Map<Integer, RMIClient> clients;
+    private RMIClient leader;
 
     //public static final String REQUEST = "request";
     //public static final String OKAY = "okay";
@@ -38,6 +44,8 @@ public class Server {
     
     public Server() {
         this.timestamp = 0;
+        this.vectorTimestamp = new HashMap<>();
+        this.clients = new HashMap<>();
         // Get address of localhost
         try {
             this.address = InetAddress.getLocalHost().getHostAddress();
@@ -47,12 +55,30 @@ public class Server {
         // Set port number to deafult
         this.port = 8890;
         this.stopRequested = false;
+        joinNetwork();
     }
     
-    public int getProcessID() {
-        return processID;
-    }
+    private void joinNetwork()
+    {
+        //Need to get leader, but how? ID is useless without a connection.
+        //Hopefully done in the Main class.
+//        for (RMIClient peer : clients.values())
+//        {
+//            try
+//            {
+//                int leaderID = peer.getLeaderID();
+//                leader = someGuy;
+//                break;
+//            } catch (RemoteException e) {}
+//        }
+//        l
+    }    
     
+    public void setClients(Map<Integer, RMIClient> clients)
+    {
+        this.clients = clients;
+    }
+        
     public void setProcessID(int processID) {
         this.processID = processID;
     }
@@ -113,7 +139,7 @@ public class Server {
         }
 
         // Create list for connections
-        this.connections = new ArrayList<Connection>();
+        this.connections = new ArrayList<>();
 
         // Listen for connections, this blocks until a connection is made or the server socket times out.
         while (!stopRequested) {
@@ -191,6 +217,14 @@ public class Server {
         connection.requestStop();
         synchronized (connections) {
             connections.remove(connection);
+        }
+    }
+        
+    private void startElection()
+    {
+        for (RMIClient client : clients.values())
+        {
+            
         }
     }
     
@@ -273,5 +307,94 @@ public class Server {
         
         return highestProcessID + 1;
     }
+
     
+//*********************
+//*                   *
+//*    RMI METHODS    *
+//*                   *
+//*********************
+    
+    @Override
+    public Map<Integer, Integer> getVTimestamp() throws RemoteException {
+        return vectorTimestamp;
+    }
+
+    @Override
+    public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException 
+    {
+        for (int process : vectorTimestamp.keySet())
+        {
+            //Compare each processors time stamp
+            Integer localProcessTime = this.vectorTimestamp.get(process);
+            Integer remoteProcessTime = vectorTimestamp.get(process);
+            if (localProcessTime == null ||
+                    localProcessTime < remoteProcessTime)
+            {
+                this.vectorTimestamp.put(process, remoteProcessTime);
+            }
+        }
+        this.vectorTimestamp = vectorTimestamp;
+    }
+
+    @Override
+    public boolean takeSnapshot() throws RemoteException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int nominateLeader(int candidateID) throws RemoteException 
+    { 
+        int electionLeader = candidateID;
+        for (int candidate : clients.keySet())
+        {
+            if (candidate > electionLeader)
+            {
+                electionLeader = candidate;
+            }
+        }
+        return electionLeader;
+    }
+
+    @Override
+    public void setLeader(int leader) throws RemoteException 
+    {
+        //check if self is leader
+        if (leader == processID)
+        {
+            this.leader = this;
+        } else
+        {
+            this.leader = clients.get(leader);
+        }
+    }
+
+    @Override
+    public int getLeaderID() throws RemoteException 
+    {
+        //save processing if self is leader
+        if (leader == this)
+        {
+            return processID;
+        }
+        for (int id : clients.keySet())
+        {
+            if (clients.get(id) == leader)
+            {
+                return id;
+            }
+        }
+        return -1; //unreachable
+    }
+    
+    @Override
+    public int getProcessID() {
+        return processID;
+    }
+    
+    @Override
+    public void getClients()
+    {
+        //TODO work out how to send clients from the leader
+    }
 }
