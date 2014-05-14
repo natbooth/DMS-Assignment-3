@@ -19,8 +19,12 @@ public interface RMIClient extends Remote {
     
     //General methods
     public int getProcessID() throws RemoteException;
-    public int getLeaderID() throws RemoteException;
-    public void getClients() throws RemoteException;
+    public RMIClient getLeader() throws RemoteException;
+    public Map<Integer, RMIClient> getClients() throws RemoteException;
+    public void updateClients(Map<Integer, RMIClient> clients) throws RemoteException;
+    public List<String> getFileList() throws RemoteException;
+    public void updateFileList(List<String> fileList) throws RemoteException;
+    
     //Cristian Algorithm (Timestamps)
     public Map<Integer, Integer> getVTimestamp() throws RemoteException;
     public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException;
@@ -38,6 +42,6 @@ public interface RMIClient extends Remote {
      * @return
      * @throws RemoteException 
      */
-    public int nominateLeader(int candidateID) throws RemoteException;
+    public int getBestLeader(int candidateID) throws RemoteException;
     public void setLeader(int leader) throws RemoteException;
 }

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the server class.
@@ -27,6 +29,8 @@ public class Server implements RMIClient {
     private List<Connection> connections;
     private Map<Integer, RMIClient> clients;
     private RMIClient leader;
+    private List<String> fileList;
+    private boolean electionInProgress;
 
     //public static final String REQUEST = "request";
     //public static final String OKAY = "okay";
@@ -56,27 +60,67 @@ public class Server implements RMIClient {
         this.port = 8890;
         this.stopRequested = false;
         joinNetwork();
+        
     }
     
     private void joinNetwork()
     {
-        //Need to get leader, but how? ID is useless without a connection.
-        //Hopefully done in the Main class.
-//        for (RMIClient peer : clients.values())
-//        {
-//            try
-//            {
-//                int leaderID = peer.getLeaderID();
-//                leader = someGuy;
-//                break;
-//            } catch (RemoteException e) {}
-//        }
-//        l
+        //get leader
+        for (RMIClient peer : clients.values())
+        {
+            try
+            {
+               leader = peer.getLeader();
+                break;
+            } catch (RemoteException e) {}
+        }
+        //get peers and files on network.  Notify leader if any files are newer.
+        if (leader != null)
+        {
+            try {
+                clients = leader.getClients();
+                List<String> localList = getLocalFileList();
+                fileList = leader.getFileList();
+                fileList = compareFileList(localList, fileList);
+                leader.updateFileList(fileList);
+            } catch (RemoteException e) {
+                System.out.println("Unable to get connect to leader: " + e);
+            }
+        } else
+        {
+            //This is the leader
+            leader = this;
+            fileList = getLocalFileList();
+        }
     }    
+    
+    private List<String> getLocalFileList()
+    {
+        List<String> files = new ArrayList<>();
+        //TODO get all files
+        return files;
+    }
+    
+    /**
+     * TODO devise a way to decide what files are the newest.
+     * TODO handle deleted files?
+     * @param localFiles
+     * @param remoteFiles
+     * @return 
+     */
+    private static List<String> compareFileList(List<String> localFiles, List<String> remoteFiles)
+    {
+        List<String> resultList = new ArrayList<>();
+        
+        
+        return resultList;
+    }
     
     public void setClients(Map<Integer, RMIClient> clients)
     {
-        this.clients = clients;
+        //remove self
+        this.clients.remove(processID);
+        this.clients = clients;        
     }
         
     public void setProcessID(int processID) {
@@ -222,9 +266,45 @@ public class Server implements RMIClient {
         
     private void startElection()
     {
-        for (RMIClient client : clients.values())
+        if (!electionInProgress)
         {
-            
+            //TODO remove the old leader from client list FIRST
+            increaseVTimestamp();
+            electionInProgress = true;
+            int bestLeaderID = processID;
+            try {
+                bestLeaderID = getBestLeader(processID);
+            } catch (RemoteException ex) {} //local, can't happen
+            List<Integer> peerVotes = new ArrayList<>();
+            for (RMIClient client : clients.values())
+            {
+                try {
+                    client.setTimestamp(vectorTimestamp);
+                    peerVotes.add(client.getBestLeader(bestLeaderID));
+                } catch (RemoteException e) {
+                    System.err.println("Error connecting to client: " + e);
+                }            
+            }
+            if (peerVotes.size() == clients.size()) //TODO can or SHOULD this happen?  If so, map of client replies might be better?
+            {
+                bestLeaderID = 0;
+                for (int i : peerVotes)
+                {
+                    if (i > bestLeaderID)
+                    {
+                        bestLeaderID = i;
+                    }
+                }
+                leader = clients.get(bestLeaderID);
+                for (RMIClient client : clients.values())
+                {
+                    try {
+                        client.setLeader(bestLeaderID);
+                    } catch (RemoteException e) {
+                        System.err.println("Error connecting to client: " + e);
+                    }            
+                }
+            }
         }
     }
     
@@ -282,7 +362,7 @@ public class Server implements RMIClient {
     }
     
     private int getCoordinatorID() {
-        // Check if this server is corordernator else check throug list of connections
+        // Check if this server is co-ordinator else check throug list of connections
         if (this.isCoordinator()) {
             return this.processID;
         } else {
@@ -297,7 +377,10 @@ public class Server implements RMIClient {
     }
     
     private int getNewProcessID() {
-        int highestProcessID = this.getProcessID();
+        int highestProcessID = 0;
+        try {
+            highestProcessID = this.getProcessID();
+        } catch (RemoteException ex) {} //local, can't happen
         
         for (Connection connection : connections) {
             if (connection.getProcessID() > highestProcessID) {
@@ -308,6 +391,11 @@ public class Server implements RMIClient {
         return highestProcessID + 1;
     }
 
+    private void increaseVTimestamp()
+    {
+        int currentTime = vectorTimestamp.get(processID);
+        vectorTimestamp.put(processID, currentTime + 1);
+    }
     
 //*********************
 //*                   *
@@ -343,8 +431,9 @@ public class Server implements RMIClient {
     }
 
     @Override
-    public int nominateLeader(int candidateID) throws RemoteException 
+    public int getBestLeader(int candidateID) throws RemoteException 
     { 
+        electionInProgress = true; //TODO this will nullify all revotes so be careful.  Check manual.
         int electionLeader = candidateID;
         for (int candidate : clients.keySet())
         {
@@ -359,6 +448,7 @@ public class Server implements RMIClient {
     @Override
     public void setLeader(int leader) throws RemoteException 
     {
+        electionInProgress = false;
         //check if self is leader
         if (leader == processID)
         {
@@ -370,31 +460,35 @@ public class Server implements RMIClient {
     }
 
     @Override
-    public int getLeaderID() throws RemoteException 
+    public RMIClient getLeader() throws RemoteException 
     {
-        //save processing if self is leader
-        if (leader == this)
-        {
-            return processID;
-        }
-        for (int id : clients.keySet())
-        {
-            if (clients.get(id) == leader)
-            {
-                return id;
-            }
-        }
-        return -1; //unreachable
+        return leader;
     }
     
     @Override
-    public int getProcessID() {
+    public int getProcessID() throws RemoteException 
+    {
         return processID;
     }
     
     @Override
-    public void getClients()
+    public Map<Integer, RMIClient>  getClients() throws RemoteException 
     {
-        //TODO work out how to send clients from the leader
+        return clients;
+    }
+    
+    @Override
+    public void updateClients(Map<Integer, RMIClient> clients) throws RemoteException {
+        this.clients.putAll(clients);
+    }
+
+    @Override
+    public List<String> getFileList() throws RemoteException {
+        return fileList;
+    }
+    
+    @Override
+    public void updateFileList( List<String> fileList) throws RemoteException {
+        this.fileList = fileList;
     }
 }
