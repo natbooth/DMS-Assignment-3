@@ -1,11 +1,5 @@
 package main;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +10,9 @@ import java.util.logging.Logger;
 
 /**
  * This is the server class.
+ * TODO call election start on disconnect.
  */
-public class Server extends Thread implements RMIClient {
+public class RMIServer implements RMIServerInterface {
     
     private Map<Integer, Integer> vectorTimestamp;
     private int processID;
@@ -25,10 +20,9 @@ public class Server extends Thread implements RMIClient {
     private int timestamp;
 //    private String address;
 //    private int port;
-    private boolean stopRequested;
 //    private List<Connection> connections;
-    private Map<Integer, RMIClient> clients;
-    private RMIClient leader;
+    private Map<Integer, RMIServerInterface> servers;
+    private RMIServerInterface leader;
     private List<String> fileList;
     private boolean electionInProgress;
 
@@ -46,10 +40,10 @@ public class Server extends Thread implements RMIClient {
 //    public static final String ELECTION_OK = "election_ok";
 //    public static final String ELECTION_COORDINATOR = "election_coordinator";
     
-    public Server() {
+    public RMIServer() {
         this.timestamp = 0;
         this.vectorTimestamp = new HashMap<>();
-        this.clients = new HashMap<>();
+        this.servers = new HashMap<>();
         // Get address of localhost
 //        try {
 //            this.address = InetAddress.getLocalHost().getHostAddress();
@@ -83,11 +77,11 @@ public class Server extends Thread implements RMIClient {
         return resultList;
     }
     
-    public void setClients(Map<Integer, RMIClient> clients)
+    public void setServers(Map<Integer, RMIServerInterface> servers)
     {
         //remove self
-        this.clients.remove(processID);
-        this.clients = clients;        
+        servers.remove(processID);
+        this.servers = servers;        
     }
         
     public void setProcessID(int processID) {
@@ -123,13 +117,39 @@ public class Server extends Thread implements RMIClient {
 //    }
 
     // Start the server if not already started and repeatedly listen for client connections until stop requested
-    public void initializeServer(RMIClient leader) {
+    public void startServer(RMIServerInterface leader) {
 
         // Set Coordinator
         this.leader = leader;
 
-        // Reset stopRequested
-        this.stopRequested = false;
+        
+        System.out.println("Starting server thread.");
+        
+        // Set processID
+        if (this == leader) 
+        {
+            this.processID = 1;
+        } else
+        {
+            try {
+                this.servers = leader.getServers();                
+                this.servers.put(leader.getProcessID(), leader);
+                System.out.println("Connected to " + servers.size() + " servers.");
+                this.processID = getNewProcessID();
+                System.out.println("Client was given Process ID #" + this.processID);
+                for (RMIServerInterface server : servers.values())
+                {
+                    server.addServer(this.processID, this);
+                }
+//                fileList = leader.getFileList();
+//                fileList = compareFileList(localList, fileList);
+//                leader.updateFileList(fileList);
+            } catch (RemoteException ex) {
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        this.vectorTimestamp.put(processID, 0);
+        System.out.println("Server setup complete.");
 
         // Create new server socket
 //        ServerSocket serverSocket = null;
@@ -189,40 +209,19 @@ public class Server extends Thread implements RMIClient {
 //        System.out.println("Server finishing");
     }
 
-    @Override
-    public void run()
-    {
-        System.out.println("Starting server thread.");
-        
-        List<String> localList = getLocalFileList();
-        // Set processID
-        if (this == leader) 
-        {
-            this.processID = 1;
-        } else
-        {
-            try {
-                this.clients = leader.getClients();
-                this.clients.put(leader.getProcessID(), leader);
-                this.processID = getNewProcessID();
-                System.out.println("Client was given Process ID #" + this.processID);
-                fileList = leader.getFileList();
-                fileList = compareFileList(localList, fileList);
-                leader.updateFileList(fileList);
-            } catch (RemoteException ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        System.out.println("Server setup complete.");
-        while (!stopRequested)
-        {
-            
-        }
-    }
     
     // Stops server AFTER the next client connection has been made or timeout is reached
     public void stopServer() {
-        this.stopRequested = true;
+        for (RMIServerInterface server : servers.values())
+        {
+            try {
+                server.removeServer(processID);
+            } catch (RemoteException ex) {
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        System.out.println("Disconnected from network.");
     }
 
     // Connect to a specified server
@@ -259,44 +258,46 @@ public class Server extends Thread implements RMIClient {
         
     private void startElection()
     {
+        System.out.println("Starting election.");
         if (!electionInProgress)
         {
             //TODO remove the old leader from client list FIRST
             increaseVTimestamp();
             electionInProgress = true;
             int bestLeaderID = processID;
+            //decide on own leader
             try {
                 bestLeaderID = getBestLeader(processID);
             } catch (RemoteException ex) {} //local, can't happen
             List<Integer> peerVotes = new ArrayList<>();
-            for (RMIClient client : clients.values())
+            //ask each client for their vote
+            for (RMIServerInterface server : servers.values())
             {
                 try {
-                    client.setTimestamp(vectorTimestamp);
-                    peerVotes.add(client.getBestLeader(bestLeaderID));
+                    server.setTimestamp(vectorTimestamp);
+                    peerVotes.add(server.getBestLeader(bestLeaderID));
+                    System.out.println("Peer voted for " + peerVotes.get(peerVotes.size() - 1));
                 } catch (RemoteException e) {
-                    System.err.println("Error connecting to client: " + e);
+                    System.err.println("Error connecting to server: " + e);
                 }            
             }
-            if (peerVotes.size() == clients.size()) //TODO can or SHOULD this happen?  If so, map of client replies might be better?
+            bestLeaderID = processID;
+            for (int i : peerVotes)
             {
-                bestLeaderID = 0;
-                for (int i : peerVotes)
+                if (i < bestLeaderID)
                 {
-                    if (i > bestLeaderID)
-                    {
-                        bestLeaderID = i;
-                    }
+                    bestLeaderID = i;
                 }
-                leader = clients.get(bestLeaderID);
-                for (RMIClient client : clients.values())
-                {
-                    try {
-                        client.setLeader(bestLeaderID);
-                    } catch (RemoteException e) {
-                        System.err.println("Error connecting to client: " + e);
-                    }            
-                }
+            }
+            leader = servers.get(bestLeaderID);
+            System.out.println("Leader selected is " + bestLeaderID);
+            for (RMIServerInterface server : servers.values())
+            {
+                try {
+                    server.setLeader(bestLeaderID);
+                } catch (RemoteException e) {
+                    System.err.println("Error connecting to server: " + e);
+                }            
             }
         }
     }
@@ -308,6 +309,30 @@ public class Server extends Thread implements RMIClient {
             case "election" :
                 startElection();
                 break;
+                
+            //debug commands
+            case "processid":
+                System.out.println("[D] ProcessID=" + processID);
+                break;
+                
+            case "leader":
+                int lead = -1;
+                for (int i : servers.keySet())
+                {
+                    if (servers.get(i) == leader)
+                    {   
+                        lead = i;
+                        break;
+                    }
+                }
+                if (lead > -1)
+                {
+                    System.out.println("[D] leader=" + lead);
+                } else
+                {
+                    System.out.println("[D] leader=" + this);                    
+                }
+                break;                
                 
             default :
                 System.out.println("Command '" + message + "' not recognised.");
@@ -373,18 +398,15 @@ public class Server extends Thread implements RMIClient {
 //        return -1;
 //    }
     
-    private int getNewProcessID() {
+    private int getNewProcessID() 
+    {
         int highestProcessID = 0;
-        try {
-            highestProcessID = this.getProcessID();
-        
-            for (RMIClient client : clients.values()) {
-                if (client.getProcessID() > highestProcessID) {
-                    highestProcessID = client.getProcessID();
-                }
+        for (int serverID : servers.keySet()) 
+        {
+            if (serverID > highestProcessID) 
+            {
+                highestProcessID = serverID;
             }
-        } catch (RemoteException ex) {
-            System.err.println("Failed to get process id. ");
         }
         
         return highestProcessID + 1;
@@ -434,13 +456,14 @@ public class Server extends Thread implements RMIClient {
     { 
         electionInProgress = true; //TODO this will nullify all revotes so be careful.  Check manual.
         int electionLeader = candidateID;
-        for (int candidate : clients.keySet())
+        for (int candidate : servers.keySet())
         {
-            if (candidate > electionLeader)
+            if (candidate < electionLeader)
             {
                 electionLeader = candidate;
             }
         }
+        System.out.println("Process " + processID + " is electing " + electionLeader);
         return electionLeader;
     }
 
@@ -454,12 +477,12 @@ public class Server extends Thread implements RMIClient {
             this.leader = this;
         } else
         {
-            this.leader = clients.get(leader);
+            this.leader = servers.get(leader);
         }
     }
 
     @Override
-    public RMIClient getLeader() throws RemoteException 
+    public RMIServerInterface getLeader() throws RemoteException 
     {
         return leader;
     }
@@ -467,18 +490,19 @@ public class Server extends Thread implements RMIClient {
     @Override
     public int getProcessID() throws RemoteException 
     {
+        System.out.println("ProcessID requested.");
         return processID;
     }
     
     @Override
-    public Map<Integer, RMIClient>  getClients() throws RemoteException 
+    public Map<Integer, RMIServerInterface>  getServers() throws RemoteException 
     {
-        return clients;
+        return servers;
     }
     
     @Override
-    public void updateClients(Map<Integer, RMIClient> clients) throws RemoteException {
-        this.clients.putAll(clients);
+    public void updateServers(Map<Integer, RMIServerInterface> servers) throws RemoteException {
+        this.servers.putAll(servers);
     }
 
     @Override
@@ -489,5 +513,16 @@ public class Server extends Thread implements RMIClient {
     @Override
     public void updateFileList( List<String> fileList) throws RemoteException {
         this.fileList = fileList;
+    }
+
+    @Override
+    public void addServer(int processID, RMIServerInterface server) throws RemoteException {
+        servers.put(processID, server);
+    }
+
+    @Override
+    public void removeServer(int processID) throws RemoteException {
+        servers.remove(processID);
+        System.out.println("Removed server #" + processID);
     }
 }
