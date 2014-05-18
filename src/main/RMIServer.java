@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,14 +22,31 @@ public class RMIServer implements RMIServerInterface
     private Map<Integer, RMIServerInterface> servers;
     private RMIServerInterface leader;
     private boolean electionInProgress;
+    private long currentTime;
+    Timer clock;
     
     public RMIServer()
     {
         this.timeStamp = new HashMap<>();
         this.servers = new HashMap<>();
-
+        initializeClock();
     }
 
+    private void initializeClock()
+    {        
+        currentTime = System.currentTimeMillis();
+        TimerTask tickTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                currentTime += 1000;
+            }
+        };
+        clock = new Timer();
+        clock.scheduleAtFixedRate(tickTask, 0, 1000);
+    }
+    
     public void setServers(Map<Integer, RMIServerInterface> servers)
     {
         //remove self
@@ -78,6 +97,7 @@ public class RMIServer implements RMIServerInterface
 
     public void stopServer()
     {
+        clock.cancel();
         //tell other clients that you are disconnecting
         for (RMIServerInterface server : servers.values())
         {
@@ -121,25 +141,32 @@ public class RMIServer implements RMIServerInterface
                     System.err.println("Error connecting to server: " + e);
                 }
             }
-            bestLeaderID = processID;
-            for (int i : peerVotes)
+            if (peerVotes.isEmpty() && servers.size() > 1)
             {
-                if (i < bestLeaderID)
+                //TODO make this a proper exception
+                System.err.println("You have been disconnected from the network.");
+            } else
+            {
+                bestLeaderID = processID;
+                for (int i : peerVotes)
                 {
-                    bestLeaderID = i;
+                    if (i < bestLeaderID)
+                    {
+                        bestLeaderID = i;
+                    }
                 }
-            }
-            leader = servers.get(bestLeaderID);
-            System.out.println("Leader selected is " + bestLeaderID);
-            for (RMIServerInterface server : servers.values())
-            {
-                try
+                leader = servers.get(bestLeaderID);
+                System.out.println("Leader selected is " + bestLeaderID);
+                for (RMIServerInterface server : servers.values())
                 {
-                    increaseVTimestamp();
-                    server.setLeader(bestLeaderID, timeStamp);
-                } catch (RemoteException e)
-                {
-                    System.err.println("Error connecting to server: " + e);
+                    try
+                    {
+                        increaseVTimestamp();
+                        server.setLeader(bestLeaderID, timeStamp);
+                    } catch (RemoteException e)
+                    {
+                        System.err.println("Error connecting to server: " + e);
+                    }
                 }
             }
             electionInProgress = false;
@@ -183,6 +210,14 @@ public class RMIServer implements RMIServerInterface
                 System.out.println("Timestamp: " + timeStamp.toString());
                 break;
                 
+            case "time" :
+                System.out.println("Time is: " + currentTime);
+                break;
+                
+            case "synchtime" :
+                synchTime();
+                break;
+                
             default:
                 System.out.println("Command '" + message + "' not recognised.");
         }
@@ -204,10 +239,40 @@ public class RMIServer implements RMIServerInterface
 
     private void increaseVTimestamp()
     {
-        int currentTime = timeStamp.get(processID);
-        timeStamp.put(processID, currentTime + 1);
+        int time = timeStamp.get(processID);
+        timeStamp.put(processID, time + 1);
     }
 
+    public void synchTime()
+    {
+        System.out.println("Starting time sync with leader.");
+        System.out.println("Current time is: " + currentTime);
+        long currTime = 0;
+        long totalTime = 0;
+        int numberOfResults = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            long startTime = System.nanoTime();
+            try
+            {
+                currTime = leader.getTime();
+                totalTime += System.nanoTime() - startTime;
+                numberOfResults++;
+            } catch (RemoteException ex) 
+            {
+            }
+        }
+        if (numberOfResults == 0)
+        {
+            System.out.println("No reply from leader.  Starting election.");
+            startElection(); //Leader has disconnected (or self)
+        } else
+        {
+            currentTime = currTime + (totalTime / numberOfResults);
+        }
+        System.out.println("New time is: " + currTime);
+    }
+    
 //*********************
 //*                   *
 //*    RMI METHODS    *
@@ -328,5 +393,11 @@ public class RMIServer implements RMIServerInterface
     {
         setTimestamp(timestamp);
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public long getTime()
+    {
+        return System.currentTimeMillis();
     }
 }

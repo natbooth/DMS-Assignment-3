@@ -25,7 +25,9 @@ public interface RMIServerInterface extends Remote {
     public void addServer(int processID, RMIServerInterface server, Map<Integer, Integer> timestamp) throws RemoteException;
     public void updateServers(Map<Integer, RMIServerInterface> servers, Map<Integer, Integer> timestamp) throws RemoteException;
     public void removeServer(int processID, Map<Integer, Integer> timestamp) throws RemoteException;
-    //Cristian Algorithm (Timestamps)
+    //Cristian Algorithm (Time)
+    public long getTime() throws RemoteException;
+    //Timestamps
     public Map<Integer, Integer> getTimestamp(Map<Integer, Integer> timestamp) throws RemoteException;
     public void setTimestamp(Map<Integer, Integer> timestamp) throws RemoteException;
         
