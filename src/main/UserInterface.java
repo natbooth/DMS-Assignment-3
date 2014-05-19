@@ -147,6 +147,9 @@ public class UserInterface extends javax.swing.JFrame
         jLabelServersConnected = new javax.swing.JLabel();
         jTextFieldServersConnected = new javax.swing.JTextField();
         jScrollPaneFiles = new javax.swing.JScrollPane();
+        jLabelSystemTime = new javax.swing.JLabel();
+        jTextFieldSystemTime = new javax.swing.JTextField();
+        jButtonUpdateSystemTime = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DMS Assignment 3");
@@ -258,14 +261,29 @@ public class UserInterface extends javax.swing.JFrame
         jTextFieldServersConnected.setEditable(false);
         jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
 
+        jLabelSystemTime.setText("SystemTime");
+
+        jTextFieldSystemTime.setEditable(false);
+        jTextFieldSystemTime.setText(server.getTimeAsString());
+
+        jButtonUpdateSystemTime.setText("Update");
+        jButtonUpdateSystemTime.setEnabled(false);
+        jButtonUpdateSystemTime.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonUpdateSystemTimeActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelMainLayout = new javax.swing.GroupLayout(jPanelMain);
         jPanelMain.setLayout(jPanelMainLayout);
         jPanelMainLayout.setHorizontalGroup(
             jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelMainLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jLabelElectionInformationTitle)
                         .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabelTitle)
@@ -302,11 +320,17 @@ public class UserInterface extends javax.swing.JFrame
                             .addComponent(jLabelServersConnected)
                             .addGap(18, 18, 18)
                             .addComponent(jTextFieldServersConnected, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createSequentialGroup()
                         .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButtonForceElection)))
-                .addGap(188, 188, 188)
+                        .addComponent(jButtonForceElection))
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jLabelSystemTime)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jTextFieldSystemTime, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jButtonUpdateSystemTime)
+                .addGap(105, 105, 105)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jLabelFilesTitle)
@@ -317,7 +341,7 @@ public class UserInterface extends javax.swing.JFrame
                                 .addComponent(jButtonRefresh))
                             .addComponent(jScrollPaneFiles, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jButtonSyncFile, javax.swing.GroupLayout.Alignment.TRAILING))
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addContainerGap(76, Short.MAX_VALUE))
         );
         jPanelMainLayout.setVerticalGroup(
             jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -360,7 +384,12 @@ public class UserInterface extends javax.swing.JFrame
                         .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jTextFieldServersConnected, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabelServersConnected))
-                        .addGap(41, 41, 41)
+                        .addGap(9, 9, 9)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextFieldSystemTime, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabelSystemTime)
+                            .addComponent(jButtonUpdateSystemTime))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jLabelElectionInformationTitle))
                     .addComponent(jScrollPaneFiles))
                 .addGap(18, 18, 18)
@@ -383,7 +412,7 @@ public class UserInterface extends javax.swing.JFrame
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
+            .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, 491, Short.MAX_VALUE)
         );
 
         pack();
@@ -426,6 +455,7 @@ public class UserInterface extends javax.swing.JFrame
         {
             this.jLabelServerStatus.setText("Stopping...");
             this.jLabelServerStatus.setBackground(Color.yellow);
+            jButtonUpdateSystemTime.setEnabled(false);
             jButtonForceElection.setEnabled(false);
             jButtonGetFileList.setEnabled(false);
             jButtonSyncFile.setEnabled(false);
@@ -501,6 +531,12 @@ public class UserInterface extends javax.swing.JFrame
         jButtonStartStopServerActionPerformed(evt);
     }//GEN-LAST:event_jTextFieldCoordinatorAddressActionPerformed
 
+    private void jButtonUpdateSystemTimeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonUpdateSystemTimeActionPerformed
+    {//GEN-HEADEREND:event_jButtonUpdateSystemTimeActionPerformed
+        server.syncTime();
+        updateInfo();
+    }//GEN-LAST:event_jButtonUpdateSystemTimeActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -523,6 +559,7 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JButton jButtonRefresh;
     private javax.swing.JButton jButtonStartStopServer;
     private javax.swing.JButton jButtonSyncFile;
+    private javax.swing.JButton jButtonUpdateSystemTime;
     private javax.swing.JLabel jLabelCoordinatorAddress;
     private javax.swing.JLabel jLabelCoordinatorID;
     private javax.swing.JLabel jLabelElectionInformationTitle;
@@ -534,6 +571,7 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JLabel jLabelServerStatus;
     private javax.swing.JLabel jLabelServerStatusTitle;
     private javax.swing.JLabel jLabelServersConnected;
+    private javax.swing.JLabel jLabelSystemTime;
     private javax.swing.JLabel jLabelTitle;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JScrollPane jScrollPaneFiles;
@@ -543,6 +581,7 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JTextField jTextFieldPort;
     private javax.swing.JTextField jTextFieldProcessID;
     private javax.swing.JTextField jTextFieldServersConnected;
+    private javax.swing.JTextField jTextFieldSystemTime;
     // End of variables declaration//GEN-END:variables
 
     // Conveniance method to set look and feel
@@ -608,7 +647,9 @@ public class UserInterface extends javax.swing.JFrame
         jTextFieldCoordinatorID.setText(Integer.toString(server.getLeaderID()));
         // Servers Connected
         jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
-
+        // System Time
+        this.jTextFieldSystemTime.setText(server.getTimeAsString());
+        
         //Server Status
         String serverStatus = server.getServerStatus();
         if (serverStatus.equals("starting"))
@@ -625,6 +666,7 @@ public class UserInterface extends javax.swing.JFrame
         } else if (serverStatus.equals("running"))
         {
             jButtonStartStopServer.setEnabled(true);
+            jButtonUpdateSystemTime.setEnabled(true);
             jButtonForceElection.setEnabled(true);
             jButtonGetFileList.setEnabled(true);
             jButtonSyncFile.setEnabled(true);

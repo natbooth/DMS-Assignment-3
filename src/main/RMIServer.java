@@ -14,14 +14,20 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This is the server class. TODO call election start on disconnect.
- */
+ * This is the server class.
+ * 
+*/
 public class RMIServer implements RMIServerInterface
 {
 
@@ -35,7 +41,6 @@ public class RMIServer implements RMIServerInterface
     private int regEntry;
     private Map<Integer, Integer> vectorTimestamp;
     private int processID;
-    private int timestamp;
     private Map<Integer, RMIServerInterface> servers;
     private RMIServerInterface leader;
     private String filesDirectory = "files";
@@ -44,17 +49,79 @@ public class RMIServer implements RMIServerInterface
     // GUI Status Infomation
     private String serverStatus = "stopped";
     private String electionStatus = "notstarted";
+    //Christian Algorithm
+    Timer clock;
+    private long currentTime;
 
     public RMIServer()
     {
-        this.timestamp = 0;
         this.vectorTimestamp = new HashMap<>();
         this.servers = new HashMap<>();
+        initializeClock();
+    }
+
+    // Christian Algorithm 
+    private void initializeClock()
+    {
+        currentTime = System.currentTimeMillis();
+        TimerTask tickTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                currentTime += 1000;
+            }
+        };
+        clock = new Timer();
+        clock.scheduleAtFixedRate(tickTask, 0, 1000);
+    }
+
+    public void syncTime()
+    {
+        System.out.println("Starting time sync with leader.");
+        System.out.println("Current time is: " + getTimeAsString());
+        long currTime = 0;
+        long totalTime = 0;
+        int numberOfResults = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            long startTime = System.nanoTime();
+            try
+            {
+                currTime = leader.getTime();
+                totalTime += System.nanoTime() - startTime;
+                numberOfResults++;
+            } catch (RemoteException ex)
+            {
+            }
+        }
+        if (numberOfResults == 0)
+        {
+            System.out.println("No reply from leader.  Starting election.");
+            try
+            {
+                startElection(); //Leader has disconnected (or self)
+            } catch (RemoteException ex)
+            {
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else
+        {
+            currentTime = currTime + (totalTime / numberOfResults);
+        }
+        System.out.println("New time is: " + getTimeAsString(currTime));
+    }
+
+    @Override
+    public long getTime()
+    {
+        System.out.println("Request for time");
+        return System.currentTimeMillis();
     }
 
     public void setServers(Map<Integer, RMIServerInterface> servers)
     {
-        //remove self
+        // Semove self
         servers.remove(processID);
         this.servers = servers;
     }
@@ -62,16 +129,6 @@ public class RMIServer implements RMIServerInterface
     public void setProcessID(int processID)
     {
         this.processID = processID;
-    }
-
-    public int getTimestamp()
-    {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp)
-    {
-        this.timestamp = timestamp;
     }
 
     // Start the server
@@ -163,7 +220,6 @@ public class RMIServer implements RMIServerInterface
 
     public void connect(String address)
     {
-
         try
         {
             // Connect to leader at specified address
@@ -220,6 +276,9 @@ public class RMIServer implements RMIServerInterface
 
             // Reset server list
             servers.clear();
+
+            //Stop Clock
+            clock.cancel();
 
             System.out.println("Disconnected from network.");
             // GUI Status
@@ -530,6 +589,20 @@ public class RMIServer implements RMIServerInterface
     public String getElectionStatus()
     {
         return this.electionStatus;
+    }
+
+    public String getTimeAsString()
+    {
+        Date date = new Date(currentTime);
+        DateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS");
+        return formatter.format(date);
+    }
+
+    private String getTimeAsString(long currTime)
+    {
+        Date date = new Date(currTime);
+        DateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS");
+        return formatter.format(date);
     }
 
 }

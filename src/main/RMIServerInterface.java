@@ -6,7 +6,6 @@
 package main;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Map;
@@ -37,6 +36,8 @@ public interface RMIServerInterface extends Remote
 
     //Cristian Algorithm (Timestamps)
     public Map<Integer, Integer> getVTimestamp() throws RemoteException;
+    
+    public long getTime() throws RemoteException;
 
     public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException;
 
