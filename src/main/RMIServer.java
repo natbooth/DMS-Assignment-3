@@ -1,13 +1,21 @@
 package main;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,36 +25,33 @@ import java.util.logging.Logger;
 public class RMIServer implements RMIServerInterface
 {
 
-    private Map<Integer, Integer> timeStamp;
+    // Server Registery Info
+    public static final String REGISTRY_IDENTIFIER = "RMIServer";
+    public static final int RMI_PORT = 8891;
+
+    RMIServerInterface localServerStub;
+    private Registry localRegistry;
+    private Registry remoteRegistry;
+    private int regEntry;
+    private Map<Integer, Integer> vectorTimestamp;
     private int processID;
+    private int timestamp;
     private Map<Integer, RMIServerInterface> servers;
     private RMIServerInterface leader;
+    private String filesDirectory = "files";
+    private boolean serverRunning;
     private boolean electionInProgress;
-    private long currentTime;
-    Timer clock;
-    
+    // GUI Status Infomation
+    private String serverStatus = "stopped";
+    private String electionStatus = "notstarted";
+
     public RMIServer()
     {
-        this.timeStamp = new HashMap<>();
+        this.timestamp = 0;
+        this.vectorTimestamp = new HashMap<>();
         this.servers = new HashMap<>();
-        initializeClock();
     }
 
-    private void initializeClock()
-    {        
-        currentTime = System.currentTimeMillis();
-        TimerTask tickTask = new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                currentTime += 1000;
-            }
-        };
-        clock = new Timer();
-        clock.scheduleAtFixedRate(tickTask, 0, 1000);
-    }
-    
     public void setServers(Map<Integer, RMIServerInterface> servers)
     {
         //remove self
@@ -58,346 +63,473 @@ public class RMIServer implements RMIServerInterface
     {
         this.processID = processID;
     }
-    
-    // Start the server if not already started and repeatedly listen for client connections until stop requested
+
+    public int getTimestamp()
+    {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp)
+    {
+        this.timestamp = timestamp;
+    }
+
+    // Start the server
     public void startServer(RMIServerInterface leader)
     {
+        // GUI Status
+        this.serverStatus = "starting";
+        try
+        {
+            // Set up a stub so remote clients can interact with this server
+            localServerStub = (RMIServerInterface) UnicastRemoteObject.exportObject(this, 0);
+
+            // Setup the local registry
+            try
+            {
+                LocateRegistry.createRegistry(RMI_PORT);
+            } catch (RemoteException e)
+            {
+                // Already running
+                System.out.println("Server already running on port " + RMI_PORT + ".");
+            }
+
+            localRegistry = LocateRegistry.getRegistry("localhost", RMI_PORT);
+
+            // Find an unused registry name (for multiple clients on one machine)
+            boolean nameInUse = true;
+            regEntry = 0;
+            while (nameInUse)
+            {
+                try
+                {
+                    localRegistry.bind(REGISTRY_IDENTIFIER + regEntry, localServerStub);
+                } catch (AlreadyBoundException ex)
+                {
+                    System.out.println("Registry entry " + regEntry + "already in use.");
+                    regEntry++;
+                    continue;
+                }
+                nameInUse = false;
+            }
+
+            System.out.println("Created local RMI Registry(" + regEntry + ") on port " + RMI_PORT + ".");
+
+        } catch (RemoteException e)
+        {
+            System.err.println("Unable to use registry: " + e);
+        }
 
         // Set Coordinator
         this.leader = leader;
-
-        System.out.println("Starting server thread.");
 
         // Set processID
         if (this == leader)
         {
             this.processID = 1;
-            this.timeStamp.put(processID, 0);
         } else
         {
             try
             {
-                this.servers = leader.getServers(timeStamp);
-                this.servers.put(leader.getProcessID(timeStamp), leader);
+                // Get list of other servers from leader
+                this.servers = leader.getServers();
+
+                // Add leader to list of servers
+                this.servers.put(leader.getProcessID(), leader);
                 System.out.println("Connected to " + servers.size() + " servers.");
-                this.processID = getNewProcessID();
+
+                // Get ProcessID
+                this.processID = leader.getNextProcessID();
                 System.out.println("Client was given Process ID #" + this.processID);
-                this.timeStamp.put(processID, 0);
+
+                // Connect to all other servers
                 for (RMIServerInterface server : servers.values())
                 {
-                    server.addServer(this.processID, this, timeStamp);
+                    server.addServer(this.processID, this);
                 }
             } catch (RemoteException ex)
             {
                 Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        this.vectorTimestamp.put(processID, 0);
         System.out.println("Server setup complete.");
+
+        // GUI Status
+        this.serverStatus = "running";
+        this.electionStatus = "complete";
+        this.serverRunning = true;
     }
 
+    public void connect(String address)
+    {
+
+        try
+        {
+            // Connect to leader at specified address
+            remoteRegistry = LocateRegistry.getRegistry(address, RMI_PORT);
+            RMIServerInterface remoteServerStub = (RMIServerInterface) remoteRegistry.lookup(REGISTRY_IDENTIFIER + "0");
+            System.out.println("Connected to Server at " + address + ":" + RMI_PORT + ".");
+            // Start server with leader
+            this.startServer(remoteServerStub);
+        } catch (RemoteException | NotBoundException ex)
+        {
+            Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    // Stops server AFTER the next client connection has been made or timeout is reached
     public void stopServer()
     {
-        clock.cancel();
-        //tell other clients that you are disconnecting
-        for (RMIServerInterface server : servers.values())
+        if (serverRunning)
         {
-            try
-            {
-                server.removeServer(processID, timeStamp);
-            } catch (RemoteException ex)
-            {
-                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+            // GUI Status
+            this.serverStatus = "stopping";
 
-        System.out.println("Disconnected from network.");
-    }
-    
-    private void startElection()
-    {
-        System.out.println("Starting election.");
-        if (!electionInProgress)
-        {
-            //TODO remove the old leader from client list FIRST
-            increaseVTimestamp();
-            electionInProgress = true;
-            int bestLeaderID = processID;
-            //decide on own leader
-            try
-            {
-                bestLeaderID = getBestLeader(processID, timeStamp);
-            } catch (RemoteException ex){} //local, can't happen
-            List<Integer> peerVotes = new ArrayList<>();
-            //ask each client for their vote
+            // Disconnect from each server
             for (RMIServerInterface server : servers.values())
             {
                 try
                 {
-                    increaseVTimestamp();
-                    peerVotes.add(server.getBestLeader(bestLeaderID, timeStamp));
-                    System.out.println("Peer voted for " + peerVotes.get(peerVotes.size() - 1));
-                } catch (RemoteException e)
+                    server.removeServer(processID);
+                } catch (Exception ex)
                 {
-                    System.err.println("Error connecting to server: " + e);
+                    Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            if (peerVotes.isEmpty() && servers.size() > 1)
+
+            // Wait for disconnect message to be recived.
+            try
             {
-                //TODO make this a proper exception
-                System.err.println("You have been disconnected from the network.");
-            } else
+                Thread.sleep(1000);
+            } catch (InterruptedException ex)
             {
-                bestLeaderID = processID;
-                for (int i : peerVotes)
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // TODO fix error when shutting down on server that was not orignally a leader
+            // Remove registery entry
+            try
+            {
+                localRegistry.unbind(REGISTRY_IDENTIFIER + regEntry);
+                UnicastRemoteObject.unexportObject(this, false);
+            } catch (RemoteException | NotBoundException ex)
+            {
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // Reset server list
+            servers.clear();
+
+            System.out.println("Disconnected from network.");
+            // GUI Status
+            this.serverStatus = "stopped";
+            this.serverRunning = false;
+        }
+    }
+
+    //*********************
+    //*                   *
+    //*    Election Methods    
+    //*                   *
+    //*********************
+    @Override
+    public void startElection() throws RemoteException
+    {
+
+        if (!electionInProgress)
+        {
+            // GUI Status
+            electionStatus = "started";
+            electionInProgress = true;
+            System.out.println("Starting election.");
+
+            // Nominate best leader starting with self
+            int electionLeaderID = processID;
+
+            for (int candidateID : servers.keySet())
+            {
+                if (candidateID < electionLeaderID)
                 {
-                    if (i < bestLeaderID)
-                    {
-                        bestLeaderID = i;
-                    }
+                    electionLeaderID = candidateID;
                 }
-                leader = servers.get(bestLeaderID);
-                System.out.println("Leader selected is " + bestLeaderID);
+            }
+
+            // If electionLeader is self send election message to each server
+            if (electionLeaderID == processID)
+            {
                 for (RMIServerInterface server : servers.values())
                 {
+
                     try
                     {
-                        increaseVTimestamp();
-                        server.setLeader(bestLeaderID, timeStamp);
-                    } catch (RemoteException e)
+                        server.setLeader(electionLeaderID);
+                    } catch (RemoteException ex)
                     {
-                        System.err.println("Error connecting to server: " + e);
+                        Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
                     }
+
                 }
-            }
-            electionInProgress = false;
-        }
-    }
 
-    public void broadcastMessage(String message)
-    {
+                // Set own to leader
+                this.setLeader(electionLeaderID);
 
-        switch (message.toLowerCase())
-        {
-            case "election":
-                startElection();
-                break;
-
-            //debug commands
-            case "processid":
-                System.out.println("[D] ProcessID=" + processID);
-                break;
-
-            case "leader":
-                int lead = -1;
-                for (int i : servers.keySet())
-                {
-                    if (servers.get(i) == leader)
-                    {
-                        lead = i;
-                        break;
-                    }
-                }
-                if (lead > -1)
-                {
-                    System.out.println("[D] leader=" + lead);
-                } else
-                {
-                    System.out.println("[D] leader=" + this);
-                }
-                break;
-            
-            case "timestamp" :
-                System.out.println("Timestamp: " + timeStamp.toString());
-                break;
-                
-            case "time" :
-                System.out.println("Time is: " + currentTime);
-                break;
-                
-            case "synchtime" :
-                synchTime();
-                break;
-                
-            default:
-                System.out.println("Command '" + message + "' not recognised.");
-        }
-    }
-    
-    private int getNewProcessID()
-    {
-        int highestProcessID = 0;
-        for (int serverID : servers.keySet())
-        {
-            if (serverID > highestProcessID)
+            } else
             {
-                highestProcessID = serverID;
+                // Send vote to each lower peer
+                for (int candidateID : servers.keySet())
+                {
+                    if (candidateID < processID)
+                    {
+                        try
+                        {
+                            servers.get(candidateID).startElection();
+                        } catch (RemoteException ex)
+                        {
+                            // Message not recived
+                            //Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
             }
         }
+    }
 
-        return highestProcessID + 1;
+    @Override
+    public void setLeader(int leaderID) throws RemoteException
+    {
+        electionInProgress = false;
+        //check if self is leader
+        if (leaderID == processID)
+        {
+            this.leader = this;
+        } else
+        {
+            this.leader = servers.get(leaderID);
+        }
+
+        System.out.println("Process " + leaderID + " is selected leader");
+
+        System.out.println("Election complete.");
+        // GUI Status
+        this.electionStatus = "complete";
     }
 
     private void increaseVTimestamp()
     {
-        int time = timeStamp.get(processID);
-        timeStamp.put(processID, time + 1);
+        int currentTime = vectorTimestamp.get(processID);
+        vectorTimestamp.put(processID, currentTime + 1);
     }
 
-    public void synchTime()
-    {
-        System.out.println("Starting time sync with leader.");
-        System.out.println("Current time is: " + currentTime);
-        long currTime = 0;
-        long totalTime = 0;
-        int numberOfResults = 0;
-        for (int i = 0; i < 20; i++)
-        {
-            long startTime = System.nanoTime();
-            try
-            {
-                currTime = leader.getTime();
-                totalTime += System.nanoTime() - startTime;
-                numberOfResults++;
-            } catch (RemoteException ex) 
-            {
-            }
-        }
-        if (numberOfResults == 0)
-        {
-            System.out.println("No reply from leader.  Starting election.");
-            startElection(); //Leader has disconnected (or self)
-        } else
-        {
-            currentTime = currTime + (totalTime / numberOfResults);
-        }
-        System.out.println("New time is: " + currTime);
-    }
-    
 //*********************
 //*                   *
 //*    RMI METHODS    *
 //*                   *
 //*********************
     @Override
-    public Map<Integer, Integer> getTimestamp(Map<Integer, Integer> timestamp) throws RemoteException
+    public Map<Integer, Integer> getVTimestamp() throws RemoteException
     {
-        return timestamp;
+        return vectorTimestamp;
     }
 
     @Override
-    public void setTimestamp(Map<Integer, Integer> timestamp) throws RemoteException
+    public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException
     {
-        System.out.println("--- SET TIMESTAMP BEGIN ---");
-        System.out.println("Setting timestamp from " + this.timeStamp.toString() + " to " + timestamp.toString());
-        for (int process : timestamp.keySet())
+        for (int process : vectorTimestamp.keySet())
         {
             //Compare each processors time stamp
-            Integer localProcessTime = this.timeStamp.get(process);
-            Integer remoteProcessTime = timestamp.get(process);
+            Integer localProcessTime = this.vectorTimestamp.get(process);
+            Integer remoteProcessTime = vectorTimestamp.get(process);
             if (localProcessTime == null
                     || localProcessTime < remoteProcessTime)
             {
-                this.timeStamp.put(process, remoteProcessTime);
-                System.out.println("added timestamp {" + process + "->" + remoteProcessTime + "}.");
+                this.vectorTimestamp.put(process, remoteProcessTime);
             }
         }
-        System.out.println("New timestamp is " + this.timeStamp.toString());
-        System.out.println("--- SET TIMESTAMP END ---");
+        this.vectorTimestamp = vectorTimestamp;
     }
 
     @Override
-    public boolean takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException
+    public boolean takeSnapshot() throws RemoteException
     {
-        setTimestamp(timestamp);
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public int getBestLeader(int candidateID, Map<Integer, Integer> timestamp) throws RemoteException
+    public int getProcessID() throws RemoteException
     {
-        setTimestamp(timestamp);
-        electionInProgress = true; //TODO this will nullify all revotes so be careful.  Check manual.
-        int electionLeader = candidateID;
-        for (int candidate : servers.keySet())
-        {
-            if (candidate < electionLeader)
-            {
-                electionLeader = candidate;
-            }
-        }
-        System.out.println("Process " + processID + " is electing " + electionLeader);
-        return electionLeader;
-    }
-
-    @Override
-    public void setLeader(int leader, Map<Integer, Integer> timestamp) throws RemoteException
-    {
-        setTimestamp(timestamp);
-        electionInProgress = false;
-        //check if self is leader
-        if (leader == processID)
-        {
-            this.leader = this;
-        } else
-        {
-            this.leader = servers.get(leader);
-        }
-    }
-
-    @Override
-    public RMIServerInterface getLeader(Map<Integer, Integer> timestamp) throws RemoteException
-    {
-        setTimestamp(timestamp);
-        return leader;
-    }
-
-    @Override
-    public int getProcessID(Map<Integer, Integer> timestamp) throws RemoteException
-    {
-        setTimestamp(timestamp);
         System.out.println("ProcessID requested.");
         return processID;
     }
 
     @Override
-    public Map<Integer, RMIServerInterface> getServers(Map<Integer, Integer> timestamp) throws RemoteException
+    public synchronized int getNextProcessID() throws RemoteException
     {
-        setTimestamp(timestamp);
+        int highestProcessID = processID;
+        for (int serverProcessID : servers.keySet())
+        {
+            if (serverProcessID > highestProcessID)
+            {
+                highestProcessID = serverProcessID;
+            }
+        }
+
+        System.out.println("Assigning processID " + (highestProcessID + 1));
+        return highestProcessID + 1;
+    }
+
+    @Override
+    public Map<Integer, RMIServerInterface> getServers() throws RemoteException
+    {
         return servers;
     }
 
+    // TODO do we use this method?
     @Override
-    public void updateServers(Map<Integer, RMIServerInterface> servers, Map<Integer, Integer> timestamp) throws RemoteException
+    public void updateServers(Map<Integer, RMIServerInterface> servers) throws RemoteException
     {
-        setTimestamp(timestamp);
-        this.servers = servers;
+        this.servers.putAll(servers);
     }
 
     @Override
-    public void addServer(int processID, RMIServerInterface server, Map<Integer, Integer> timestamp) throws RemoteException
+    public void addServer(int processID, RMIServerInterface server) throws RemoteException
     {
-        setTimestamp(timestamp);
         servers.put(processID, server);
     }
 
     @Override
-    public void removeServer(int processID, Map<Integer, Integer> timestamp) throws RemoteException
+    public void removeServer(int processID) throws RemoteException
     {
-        setTimestamp(timestamp);
+        // Remove server from map
         servers.remove(processID);
         System.out.println("Removed server #" + processID);
+
+        // If server is leader start election
+        if (leader.getProcessID() == processID)
+        {
+            this.startElection();
+        }
+    }
+
+    //*********************
+    //*                   *
+    //* File Transfer Methods
+    //*                   *
+    //*********************
+    @Override
+    public File[] getFileList() throws RemoteException
+    {
+        System.out.println("File List Requested");
+        File folder = new File(filesDirectory);
+        return folder.listFiles();
+
     }
 
     @Override
-    public void sendFile(File file, Map<Integer, Integer> timestamp) throws RemoteException
+    public byte[] downloadFile(String fileName) throws RemoteException
     {
-        setTimestamp(timestamp);
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try
+        {
+            File file = new File(filesDirectory + "/" + fileName);
+            byte buffer[] = new byte[(int) file.length()];
+            BufferedInputStream input = new BufferedInputStream(new FileInputStream(filesDirectory + "/" + fileName));
+            input.read(buffer, 0, buffer.length);
+            input.close();
+            return (buffer);
+        } catch (Exception e)
+        {
+            System.out.println("downloadFile: " + e.getMessage());
+            e.printStackTrace();
+            return (null);
+        }
     }
-    
-    @Override
-    public long getTime()
+
+    public void getFileFromLeader(String fileName)
     {
-        return System.currentTimeMillis();
+        try
+        {
+            byte[] filedata = leader.downloadFile(fileName);
+            File file = new File(filesDirectory + "/" + fileName);
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(filesDirectory + "/" + fileName));
+            output.write(filedata, 0, filedata.length);
+            output.flush();
+            output.close();
+
+        } catch (RemoteException ex)
+        {
+            Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex)
+        {
+            Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
+
+    //*********************
+    //*                   *
+    //* GUI Infomation Methods
+    //*                   *
+    //*********************
+    public File[] getLeaderFileList()
+    {
+        try
+        {
+            return leader.getFileList();
+        } catch (RemoteException ex)
+        {
+            System.out.println("getLeaderFileList: " + ex);
+            return null;
+        }
+    }
+
+    public String getLocalIPAddress()
+    {
+        String address = "";
+        try
+        {
+            address = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException ex)
+        {
+            Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return address;
+    }
+
+    public int getLocalProcessID()
+    {
+        return this.processID;
+    }
+
+    public int getLeaderID()
+    {
+        int id = 0;
+        try
+        {
+            id = leader.getProcessID();
+        } catch (Exception ex)
+        {
+            // Ignore Exception if no leader yet
+        }
+        return id;
+    }
+
+    public int getNumServersConnected()
+    {
+        if (this.serverStatus.equals("running"))
+        {
+            return this.servers.size() + 1;
+        }
+        return this.servers.size();
+
+    }
+
+    public String getServerStatus()
+    {
+        return this.serverStatus;
+    }
+
+    public String getElectionStatus()
+    {
+        return this.electionStatus;
+    }
+
 }

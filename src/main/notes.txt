@@ -1,1 +1,0 @@
-when sending or receiving messages with RicartAgrawala make sure you call incrementTime() as it has been removed from sendMessage() in ProcessConnection class
