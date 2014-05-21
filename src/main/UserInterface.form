@@ -115,21 +115,24 @@
                       </Group>
                   </Group>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                  <Component id="jButtonUpdateSystemTime" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace min="-2" pref="105" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="103" alignment="1" groupAlignment="0" attributes="0">
-                          <Component id="jLabelFilesTitle" min="-2" max="-2" attributes="0"/>
-                          <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
-                              <Group type="102" alignment="0" attributes="0">
-                                  <Component id="jButtonGetFileList" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="32767" attributes="0"/>
-                                  <Component id="jButtonRefresh" min="-2" max="-2" attributes="0"/>
+                      <Group type="102" attributes="0">
+                          <Component id="jButtonUpdateSystemTime" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="105" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="103" alignment="1" groupAlignment="0" attributes="0">
+                                  <Component id="jLabelFilesTitle" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jButtonGetFileList" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jScrollPaneFiles" alignment="0" min="-2" pref="356" max="-2" attributes="0"/>
                               </Group>
-                              <Component id="jScrollPaneFiles" alignment="0" min="-2" pref="356" max="-2" attributes="0"/>
+                              <Component id="jButtonSyncFile" alignment="1" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
-                      <Component id="jButtonSyncFile" alignment="1" min="-2" max="-2" attributes="0"/>
+                      <Group type="102" attributes="0">
+                          <Component id="jButtonTakeSnapshot" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="jButtonRefresh" min="-2" max="-2" attributes="0"/>
+                      </Group>
                   </Group>
                   <EmptySpace pref="76" max="32767" attributes="0"/>
               </Group>
@@ -139,8 +142,12 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="jLabelTitle" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="jLabelTitle" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jButtonTakeSnapshot" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jButtonRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace min="-2" pref="15" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="jLabelServerStatusTitle" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabelFilesTitle" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -150,7 +157,6 @@
                       <Component id="jLabelCoordinatorAddress" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jTextFieldCoordinatorAddress" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jButtonGetFileList" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButtonRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="16" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" max="-2" attributes="0">
@@ -406,6 +412,14 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonUpdateSystemTimeActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="jButtonTakeSnapshot">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Take Snapshot"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonTakeSnapshotActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

@@ -150,6 +150,7 @@ public class UserInterface extends javax.swing.JFrame
         jLabelSystemTime = new javax.swing.JLabel();
         jTextFieldSystemTime = new javax.swing.JTextField();
         jButtonUpdateSystemTime = new javax.swing.JButton();
+        jButtonTakeSnapshot = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DMS Assignment 3");
@@ -276,6 +277,15 @@ public class UserInterface extends javax.swing.JFrame
             }
         });
 
+        jButtonTakeSnapshot.setText("Take Snapshot");
+        jButtonTakeSnapshot.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonTakeSnapshotActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelMainLayout = new javax.swing.GroupLayout(jPanelMain);
         jPanelMain.setLayout(jPanelMainLayout);
         jPanelMainLayout.setHorizontalGroup(
@@ -329,26 +339,31 @@ public class UserInterface extends javax.swing.JFrame
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jTextFieldSystemTime, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButtonUpdateSystemTime)
-                .addGap(105, 105, 105)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jLabelFilesTitle)
-                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMainLayout.createSequentialGroup()
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jButtonUpdateSystemTime)
+                        .addGap(105, 105, 105)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabelFilesTitle)
                                 .addComponent(jButtonGetFileList)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jButtonRefresh))
-                            .addComponent(jScrollPaneFiles, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jButtonSyncFile, javax.swing.GroupLayout.Alignment.TRAILING))
+                                .addComponent(jScrollPaneFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jButtonSyncFile, javax.swing.GroupLayout.Alignment.TRAILING)))
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jButtonTakeSnapshot)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButtonRefresh)))
                 .addContainerGap(76, Short.MAX_VALUE))
         );
         jPanelMainLayout.setVerticalGroup(
             jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelMainLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabelTitle)
-                .addGap(18, 18, 18)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelTitle)
+                    .addComponent(jButtonTakeSnapshot)
+                    .addComponent(jButtonRefresh))
+                .addGap(15, 15, 15)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelServerStatusTitle)
                     .addComponent(jLabelFilesTitle))
@@ -356,8 +371,7 @@ public class UserInterface extends javax.swing.JFrame
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelCoordinatorAddress)
                     .addComponent(jTextFieldCoordinatorAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonGetFileList)
-                    .addComponent(jButtonRefresh))
+                    .addComponent(jButtonGetFileList))
                 .addGap(16, 16, 16)
                 .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanelMainLayout.createSequentialGroup()
@@ -477,16 +491,11 @@ public class UserInterface extends javax.swing.JFrame
     private void jButtonForceElectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonForceElectionActionPerformed
         this.jLabelElectionStatus.setText("Election Started");
         this.jLabelElectionStatus.setBackground(Color.yellow);
-        try
-        {
-            // Start Election Process
-            server.startElection();
 
-            updateInfo();
-        } catch (RemoteException ex)
-        {
-            Logger.getLogger(UserInterface.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        // Start Election Process
+        server.forceElection();
+        updateInfo();
+
     }//GEN-LAST:event_jButtonForceElectionActionPerformed
 
     private void jButtonGetFileListActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonGetFileListActionPerformed
@@ -537,6 +546,12 @@ public class UserInterface extends javax.swing.JFrame
         updateInfo();
     }//GEN-LAST:event_jButtonUpdateSystemTimeActionPerformed
 
+    private void jButtonTakeSnapshotActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTakeSnapshotActionPerformed
+    {//GEN-HEADEREND:event_jButtonTakeSnapshotActionPerformed
+        JOptionPane.showMessageDialog(this, "Snapshot is " + server.startSnapshot(), "Snapshot", JOptionPane.PLAIN_MESSAGE);
+
+    }//GEN-LAST:event_jButtonTakeSnapshotActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -559,6 +574,7 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JButton jButtonRefresh;
     private javax.swing.JButton jButtonStartStopServer;
     private javax.swing.JButton jButtonSyncFile;
+    private javax.swing.JButton jButtonTakeSnapshot;
     private javax.swing.JButton jButtonUpdateSystemTime;
     private javax.swing.JLabel jLabelCoordinatorAddress;
     private javax.swing.JLabel jLabelCoordinatorID;
@@ -649,7 +665,7 @@ public class UserInterface extends javax.swing.JFrame
         jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
         // System Time
         this.jTextFieldSystemTime.setText(server.getTimeAsString());
-        
+
         //Server Status
         String serverStatus = server.getServerStatus();
         if (serverStatus.equals("starting"))

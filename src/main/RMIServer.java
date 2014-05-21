@@ -34,15 +34,16 @@ public class RMIServer implements RMIServerInterface
     // Server Registery Info
     public static final String REGISTRY_IDENTIFIER = "RMIServer";
     public static final int RMI_PORT = 8891;
-
-    RMIServerInterface localServerStub;
+    private RMIServerInterface localServerStub;
     private Registry localRegistry;
     private Registry remoteRegistry;
     private int regEntry;
-    private Map<Integer, Integer> vectorTimestamp;
+    // Server Details
     private int processID;
+    private Map<Integer, Integer> vectorTimestamp;
     private Map<Integer, RMIServerInterface> servers;
     private RMIServerInterface leader;
+    // Directory for shared files
     private String filesDirectory = "files";
     private boolean serverRunning;
     private boolean electionInProgress;
@@ -60,77 +61,11 @@ public class RMIServer implements RMIServerInterface
         initializeClock();
     }
 
-    // Christian Algorithm 
-    private void initializeClock()
-    {
-        currentTime = System.currentTimeMillis();
-        TimerTask tickTask = new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                currentTime += 1000;
-            }
-        };
-        clock = new Timer();
-        clock.scheduleAtFixedRate(tickTask, 0, 1000);
-    }
-
-    public void syncTime()
-    {
-        System.out.println("Starting time sync with leader.");
-        System.out.println("Current time is: " + getTimeAsString());
-        long currTime = 0;
-        long totalTime = 0;
-        int numberOfResults = 0;
-        for (int i = 0; i < 20; i++)
-        {
-            long startTime = System.nanoTime();
-            try
-            {
-                currTime = leader.getTime();
-                totalTime += System.nanoTime() - startTime;
-                numberOfResults++;
-            } catch (RemoteException ex)
-            {
-            }
-        }
-        if (numberOfResults == 0)
-        {
-            System.out.println("No reply from leader.  Starting election.");
-            try
-            {
-                startElection(); //Leader has disconnected (or self)
-            } catch (RemoteException ex)
-            {
-                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else
-        {
-            currentTime = currTime + (totalTime / numberOfResults);
-        }
-        System.out.println("New time is: " + getTimeAsString(currTime));
-    }
-
-    @Override
-    public long getTime()
-    {
-        System.out.println("Request for time");
-        return System.currentTimeMillis();
-    }
-
-    public void setServers(Map<Integer, RMIServerInterface> servers)
-    {
-        // Semove self
-        servers.remove(processID);
-        this.servers = servers;
-    }
-
-    public void setProcessID(int processID)
-    {
-        this.processID = processID;
-    }
-
+    //*******************************
+    //*                             *
+    //*    Server Methods           *
+    //*                             *
+    //*******************************
     // Start the server
     public void startServer(RMIServerInterface leader)
     {
@@ -184,25 +119,32 @@ public class RMIServer implements RMIServerInterface
         if (this == leader)
         {
             this.processID = 1;
+            // Initlise vectorTimestamp
+            this.vectorTimestamp.put(processID, 0);
         } else
         {
             try
             {
                 // Get list of other servers from leader
-                this.servers = leader.getServers();
+
+                this.servers = leader.getServers(vectorTimestamp);
 
                 // Add leader to list of servers
-                this.servers.put(leader.getProcessID(), leader);
+                this.servers.put(leader.getProcessID(vectorTimestamp), leader);
                 System.out.println("Connected to " + servers.size() + " servers.");
 
                 // Get ProcessID
-                this.processID = leader.getNextProcessID();
+                this.processID = leader.getNextProcessID(vectorTimestamp);
                 System.out.println("Client was given Process ID #" + this.processID);
+
+                // Initlise vectorTimestamp to 3 beacuse of three previous messages
+                this.vectorTimestamp.put(processID, 3);
 
                 // Connect to all other servers
                 for (RMIServerInterface server : servers.values())
                 {
-                    server.addServer(this.processID, this);
+                    increaseVTimestamp();
+                    server.addServer(this.processID, this, vectorTimestamp);
                 }
             } catch (RemoteException ex)
             {
@@ -218,6 +160,7 @@ public class RMIServer implements RMIServerInterface
         this.serverRunning = true;
     }
 
+    // Connect to server
     public void connect(String address)
     {
         try
@@ -234,7 +177,7 @@ public class RMIServer implements RMIServerInterface
         }
     }
 
-    // Stops server AFTER the next client connection has been made or timeout is reached
+    // Stop server
     public void stopServer()
     {
         if (serverRunning)
@@ -247,7 +190,8 @@ public class RMIServer implements RMIServerInterface
             {
                 try
                 {
-                    server.removeServer(processID);
+                    increaseVTimestamp();
+                    server.removeServer(processID, vectorTimestamp);
                 } catch (Exception ex)
                 {
                     Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
@@ -277,7 +221,7 @@ public class RMIServer implements RMIServerInterface
             // Reset server list
             servers.clear();
 
-            //Stop Clock
+            // Stop Clock
             clock.cancel();
 
             System.out.println("Disconnected from network.");
@@ -287,14 +231,87 @@ public class RMIServer implements RMIServerInterface
         }
     }
 
-    //*********************
-    //*                   *
-    //*    Election Methods    
-    //*                   *
-    //*********************
+    //*******************************
+    //*                             *
+    //*    RMI Server Methods       *
+    //*                             *
+    //*******************************
     @Override
-    public void startElection() throws RemoteException
+    public int getProcessID(Map<Integer, Integer> timestamp) throws RemoteException
     {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        System.out.println("ProcessID requested.");
+        return processID;
+    }
+
+    @Override
+    public synchronized int getNextProcessID(Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        int highestProcessID = processID;
+        for (int serverProcessID : servers.keySet())
+        {
+            if (serverProcessID > highestProcessID)
+            {
+                highestProcessID = serverProcessID;
+            }
+        }
+
+        System.out.println("Assigning processID " + (highestProcessID + 1));
+        return highestProcessID + 1;
+    }
+
+    @Override
+    public Map<Integer, RMIServerInterface> getServers(Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        return servers;
+    }
+
+    @Override
+    public void addServer(int processID, RMIServerInterface server, Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        servers.put(processID, server);
+    }
+
+    @Override
+    public void removeServer(int processID, Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        // Remove server from map
+        servers.remove(processID);
+        System.out.println("Removed server #" + processID);
+
+        // If server is leader start election
+        increaseVTimestamp();
+        if (leader.getProcessID(vectorTimestamp) == processID)
+        {
+            increaseVTimestamp();
+            this.startElection(vectorTimestamp);
+        }
+    }
+
+    //*******************************
+    //*                             *
+    //*    Election Methods         *
+    //*                             *
+    //*******************************
+    @Override
+    public void startElection(Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
 
         if (!electionInProgress)
         {
@@ -322,7 +339,8 @@ public class RMIServer implements RMIServerInterface
 
                     try
                     {
-                        server.setLeader(electionLeaderID);
+                        increaseVTimestamp();
+                        server.setLeader(electionLeaderID, vectorTimestamp);
                     } catch (RemoteException ex)
                     {
                         Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
@@ -331,7 +349,8 @@ public class RMIServer implements RMIServerInterface
                 }
 
                 // Set own to leader
-                this.setLeader(electionLeaderID);
+                increaseVTimestamp();
+                this.setLeader(electionLeaderID, vectorTimestamp);
 
             } else
             {
@@ -342,7 +361,8 @@ public class RMIServer implements RMIServerInterface
                     {
                         try
                         {
-                            servers.get(candidateID).startElection();
+                            increaseVTimestamp();
+                            servers.get(candidateID).startElection(vectorTimestamp);
                         } catch (RemoteException ex)
                         {
                             // Message not recived
@@ -355,8 +375,11 @@ public class RMIServer implements RMIServerInterface
     }
 
     @Override
-    public void setLeader(int leaderID) throws RemoteException
+    public void setLeader(int leaderID, Map<Integer, Integer> timestamp) throws RemoteException
     {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
         electionInProgress = false;
         //check if self is leader
         if (leaderID == processID)
@@ -374,19 +397,89 @@ public class RMIServer implements RMIServerInterface
         this.electionStatus = "complete";
     }
 
-    private void increaseVTimestamp()
+    //*******************************
+    //*                             *
+    //* Christian's Algorithm       *
+    //*                             *
+    //*******************************
+    private void initializeClock()
     {
-        int currentTime = vectorTimestamp.get(processID);
-        vectorTimestamp.put(processID, currentTime + 1);
+        currentTime = System.currentTimeMillis();
+        TimerTask tickTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                currentTime += 1000;
+            }
+        };
+        clock = new Timer();
+        clock.scheduleAtFixedRate(tickTask, 0, 1000);
     }
 
-//*********************
-//*                   *
-//*    RMI METHODS    *
-//*                   *
-//*********************
+    public void syncTime()
+    {
+        System.out.println("Starting time sync with leader.");
+        System.out.println("Current time is: " + getTimeAsString());
+        long currTime = 0;
+        long totalTime = 0;
+        int numberOfResults = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            long startTime = System.nanoTime();
+            try
+            {
+                increaseVTimestamp();
+                currTime = leader.getTime(vectorTimestamp);
+                totalTime += System.nanoTime() - startTime;
+                numberOfResults++;
+            } catch (RemoteException ex)
+            {
+            }
+        }
+        if (numberOfResults == 0)
+        {
+            System.out.println("No reply from leader.  Starting election.");
+            try
+            {
+                increaseVTimestamp();
+                startElection(vectorTimestamp); //Leader has disconnected (or self)
+            } catch (RemoteException ex)
+            {
+                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else
+        {
+            currentTime = currTime + (totalTime / numberOfResults);
+        }
+        System.out.println("New time is: " + getTimeAsString(currTime));
+    }
+
     @Override
-    public Map<Integer, Integer> getVTimestamp() throws RemoteException
+    public long getTime(Map<Integer, Integer> timestamp) throws RemoteException
+    {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        System.out.println("Request for time");
+        return System.currentTimeMillis();
+    }
+
+    //*******************************
+    //*                             *
+    //*    Timestamp Methods         *
+    //*                             *
+    //*******************************
+    private void increaseVTimestamp()
+    {
+
+        int currentTimestamp = vectorTimestamp.get(processID);
+        vectorTimestamp.put(processID, currentTimestamp + 1);
+        System.out.println("Increaseing timestamp to " + (currentTimestamp + 1));
+    }
+
+    @Override
+    public Map<Integer, Integer> getVTimestamp(Map<Integer, Integer> timestamp) throws RemoteException
     {
         return vectorTimestamp;
     }
@@ -394,6 +487,8 @@ public class RMIServer implements RMIServerInterface
     @Override
     public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException
     {
+        System.out.println("--- SET TIMESTAMP BEGIN ---");
+        System.out.println("Setting timestamp from " + this.vectorTimestamp.toString() + " to " + vectorTimestamp.toString());
         for (int process : vectorTimestamp.keySet())
         {
             //Compare each processors time stamp
@@ -403,81 +498,38 @@ public class RMIServer implements RMIServerInterface
                     || localProcessTime < remoteProcessTime)
             {
                 this.vectorTimestamp.put(process, remoteProcessTime);
+                System.out.println("added timestamp {" + process + "->" + remoteProcessTime + "}.");
             }
         }
-        this.vectorTimestamp = vectorTimestamp;
+        System.out.println("New timestamp is " + this.vectorTimestamp.toString());
+        System.out.println("--- SET TIMESTAMP END ---");
     }
 
+    //*******************************
+    //*                             *
+    //*    Snapshot Methods         *
+    //*                             *
+    //*******************************
     @Override
-    public boolean takeSnapshot() throws RemoteException
+    public boolean takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
+        return true;
     }
 
+    //*******************************
+    //*                             *
+    //*    File Transfer Methods    *
+    //*                             *
+    //*******************************
     @Override
-    public int getProcessID() throws RemoteException
+    public File[] getFileList(Map<Integer, Integer> timestamp) throws RemoteException
     {
-        System.out.println("ProcessID requested.");
-        return processID;
-    }
+        // Set vector timestamps 
+        setTimestamp(timestamp);
 
-    @Override
-    public synchronized int getNextProcessID() throws RemoteException
-    {
-        int highestProcessID = processID;
-        for (int serverProcessID : servers.keySet())
-        {
-            if (serverProcessID > highestProcessID)
-            {
-                highestProcessID = serverProcessID;
-            }
-        }
-
-        System.out.println("Assigning processID " + (highestProcessID + 1));
-        return highestProcessID + 1;
-    }
-
-    @Override
-    public Map<Integer, RMIServerInterface> getServers() throws RemoteException
-    {
-        return servers;
-    }
-
-    // TODO do we use this method?
-    @Override
-    public void updateServers(Map<Integer, RMIServerInterface> servers) throws RemoteException
-    {
-        this.servers.putAll(servers);
-    }
-
-    @Override
-    public void addServer(int processID, RMIServerInterface server) throws RemoteException
-    {
-        servers.put(processID, server);
-    }
-
-    @Override
-    public void removeServer(int processID) throws RemoteException
-    {
-        // Remove server from map
-        servers.remove(processID);
-        System.out.println("Removed server #" + processID);
-
-        // If server is leader start election
-        if (leader.getProcessID() == processID)
-        {
-            this.startElection();
-        }
-    }
-
-    //*********************
-    //*                   *
-    //* File Transfer Methods
-    //*                   *
-    //*********************
-    @Override
-    public File[] getFileList() throws RemoteException
-    {
         System.out.println("File List Requested");
         File folder = new File(filesDirectory);
         return folder.listFiles();
@@ -485,8 +537,11 @@ public class RMIServer implements RMIServerInterface
     }
 
     @Override
-    public byte[] downloadFile(String fileName) throws RemoteException
+    public byte[] downloadFile(String fileName, Map<Integer, Integer> timestamp) throws RemoteException
     {
+        // Set vector timestamps 
+        setTimestamp(timestamp);
+
         try
         {
             File file = new File(filesDirectory + "/" + fileName);
@@ -507,7 +562,8 @@ public class RMIServer implements RMIServerInterface
     {
         try
         {
-            byte[] filedata = leader.downloadFile(fileName);
+            increaseVTimestamp();
+            byte[] filedata = leader.downloadFile(fileName, vectorTimestamp);
             File file = new File(filesDirectory + "/" + fileName);
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(filesDirectory + "/" + fileName));
             output.write(filedata, 0, filedata.length);
@@ -523,16 +579,17 @@ public class RMIServer implements RMIServerInterface
         }
     }
 
-    //*********************
-    //*                   *
-    //* GUI Infomation Methods
-    //*                   *
-    //*********************
+    //*******************************
+    //*                             *
+    //*    GUI Infomation Methods   *
+    //*                             *
+    //*******************************
     public File[] getLeaderFileList()
     {
         try
         {
-            return leader.getFileList();
+            increaseVTimestamp();
+            return leader.getFileList(vectorTimestamp);
         } catch (RemoteException ex)
         {
             System.out.println("getLeaderFileList: " + ex);
@@ -563,7 +620,8 @@ public class RMIServer implements RMIServerInterface
         int id = 0;
         try
         {
-            id = leader.getProcessID();
+            increaseVTimestamp();
+            id = leader.getProcessID(vectorTimestamp);
         } catch (Exception ex)
         {
             // Ignore Exception if no leader yet
@@ -586,11 +644,33 @@ public class RMIServer implements RMIServerInterface
         return this.serverStatus;
     }
 
+    public void forceElection()
+    {
+        try
+        {
+            increaseVTimestamp();
+            this.startElection(vectorTimestamp);
+        } catch (RemoteException ex)
+        {
+            Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     public String getElectionStatus()
     {
         return this.electionStatus;
     }
 
+    public String startSnapshot()
+    {
+        return this.vectorTimestamp.toString();
+    }
+
+    //*******************************
+    //*                             *
+    //*    Convenience Methods      *
+    //*                             *
+    //*******************************
     public String getTimeAsString()
     {
         Date date = new Date(currentTime);
