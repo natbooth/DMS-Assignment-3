@@ -42,8 +42,10 @@ public interface RMIServerInterface extends Remote
     public void setTimestamp(Map<Integer, Integer> vectorTimestamp) throws RemoteException;
 
     // ChandyLamport (Snapshots)
-    public boolean takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException;
-
+    public Map<Integer, Snapshot> takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException;
+    
+    public void snapshotFinished(Map<Integer, Integer> timestamp, Map<Integer, Snapshot> systemSnapshto) throws RemoteException;
+    
     // File Transfer
     public byte[] downloadFile(String fileName, Map<Integer, Integer> timestamp) throws RemoteException;
 

@@ -1,5 +1,7 @@
 package main;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -53,6 +55,10 @@ public class RMIServer implements RMIServerInterface
     //Christian Algorithm
     Timer clock;
     private long currentTime;
+
+    private boolean snapshotTaken;
+    Map<Integer, Snapshot> systemSnapshot;
+    
 
     public RMIServer()
     {
@@ -143,7 +149,7 @@ public class RMIServer implements RMIServerInterface
                 // Connect to all other servers
                 for (RMIServerInterface server : servers.values())
                 {
-                    increaseVTimestamp();
+                    increaseTimestamp();
                     server.addServer(this.processID, this, vectorTimestamp);
                 }
             } catch (RemoteException ex)
@@ -190,7 +196,7 @@ public class RMIServer implements RMIServerInterface
             {
                 try
                 {
-                    increaseVTimestamp();
+                    increaseTimestamp();
                     server.removeServer(processID, vectorTimestamp);
                 } catch (Exception ex)
                 {
@@ -294,10 +300,10 @@ public class RMIServer implements RMIServerInterface
         System.out.println("Removed server #" + processID);
 
         // If server is leader start election
-        increaseVTimestamp();
+        increaseTimestamp();
         if (leader.getProcessID(vectorTimestamp) == processID)
         {
-            increaseVTimestamp();
+            increaseTimestamp();
             this.startElection(vectorTimestamp);
         }
     }
@@ -339,7 +345,7 @@ public class RMIServer implements RMIServerInterface
 
                     try
                     {
-                        increaseVTimestamp();
+                        increaseTimestamp();
                         server.setLeader(electionLeaderID, vectorTimestamp);
                     } catch (RemoteException ex)
                     {
@@ -349,7 +355,7 @@ public class RMIServer implements RMIServerInterface
                 }
 
                 // Set own to leader
-                increaseVTimestamp();
+                increaseTimestamp();
                 this.setLeader(electionLeaderID, vectorTimestamp);
 
             } else
@@ -361,7 +367,7 @@ public class RMIServer implements RMIServerInterface
                     {
                         try
                         {
-                            increaseVTimestamp();
+                            increaseTimestamp();
                             servers.get(candidateID).startElection(vectorTimestamp);
                         } catch (RemoteException ex)
                         {
@@ -409,7 +415,7 @@ public class RMIServer implements RMIServerInterface
         {
             @Override
             public void run()
-            {
+            {                
                 currentTime += 1000;
             }
         };
@@ -419,40 +425,46 @@ public class RMIServer implements RMIServerInterface
 
     public void syncTime()
     {
-        System.out.println("Starting time sync with leader.");
-        System.out.println("Current time is: " + getTimeAsString());
-        long currTime = 0;
-        long totalTime = 0;
-        int numberOfResults = 0;
-        for (int i = 0; i < 20; i++)
+        if (leader != this)
         {
-            long startTime = System.nanoTime();
-            try
+            System.out.println("Starting time sync with leader.");
+            System.out.println("Current time is: " + getTimeAsString());
+            long currTime = 0;
+            long totalTime = 0;
+            int numberOfResults = 0;
+            for (int i = 0; i < 20; i++)
             {
-                increaseVTimestamp();
-                currTime = leader.getTime(vectorTimestamp);
-                totalTime += System.nanoTime() - startTime;
-                numberOfResults++;
-            } catch (RemoteException ex)
-            {
+                try
+                {
+                    increaseTimestamp();
+                    long startTime = System.currentTimeMillis();
+                    currTime = leader.getTime(vectorTimestamp);
+                    totalTime += System.currentTimeMillis() - startTime;
+                    numberOfResults++;
+                } catch (RemoteException ex)
+                {
+                }
             }
-        }
-        if (numberOfResults == 0)
-        {
-            System.out.println("No reply from leader.  Starting election.");
-            try
+            if (numberOfResults == 0)
             {
-                increaseVTimestamp();
-                startElection(vectorTimestamp); //Leader has disconnected (or self)
-            } catch (RemoteException ex)
+                System.out.println("No reply from leader.  Starting election.");
+                try
+                {
+                    increaseTimestamp();
+                    startElection(vectorTimestamp); //Leader has disconnected (or self)
+                } catch (RemoteException ex)
+                {
+                    Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else
             {
-                Logger.getLogger(RMIServer.class.getName()).log(Level.SEVERE, null, ex);
+                currentTime = currTime + (totalTime / numberOfResults);
             }
+            System.out.println("New time is: " + getTimeAsString(currTime));
         } else
         {
-            currentTime = currTime + (totalTime / numberOfResults);
+            currentTime = System.currentTimeMillis();
         }
-        System.out.println("New time is: " + getTimeAsString(currTime));
     }
 
     @Override
@@ -462,7 +474,7 @@ public class RMIServer implements RMIServerInterface
         setTimestamp(timestamp);
 
         System.out.println("Request for time");
-        return System.currentTimeMillis();
+        return currentTime;
     }
 
     //*******************************
@@ -470,7 +482,7 @@ public class RMIServer implements RMIServerInterface
     //*    Timestamp Methods         *
     //*                             *
     //*******************************
-    private void increaseVTimestamp()
+    private void increaseTimestamp()
     {
 
         int currentTimestamp = vectorTimestamp.get(processID);
@@ -511,14 +523,53 @@ public class RMIServer implements RMIServerInterface
     //*                             *
     //*******************************
     @Override
-    public boolean takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException
+    public Map<Integer, Snapshot> takeSnapshot(Map<Integer, Integer> timestamp) throws RemoteException
     {
-        // Set vector timestamps 
-        setTimestamp(timestamp);
-
-        return true;
+        Map<Integer, Snapshot> neighbourSnapshots = new HashMap<>();
+        if (!snapshotTaken)
+        {
+            neighbourSnapshots.put(processID, new Snapshot(getFileList(timestamp)));
+            snapshotTaken = true;
+            // Set vector timestamps 
+            setTimestamp(timestamp);
+            for (RMIServerInterface server : servers.values())
+            {
+                increaseTimestamp();
+                try
+                {
+                    neighbourSnapshots.putAll(server.takeSnapshot(vectorTimestamp));
+                } catch (RemoteException ex) { }
+            }
+        }
+        return neighbourSnapshots;
     }
 
+    @Override 
+    public void snapshotFinished(Map<Integer, Integer> timestamp, Map<Integer, Snapshot> systemSnapshot) 
+            throws RemoteException
+    {
+        setTimestamp(vectorTimestamp);
+        this.systemSnapshot = systemSnapshot;
+        snapshotTaken = false;        
+    }
+    
+    public void startSnapshot()
+    {
+        try
+        {
+            systemSnapshot = takeSnapshot(vectorTimestamp);
+        } catch (RemoteException ex) { }
+        for (RMIServerInterface server : servers.values())
+        {
+            increaseTimestamp();
+            try
+            {
+                server.snapshotFinished(vectorTimestamp, systemSnapshot);
+            } catch (RemoteException ex){}
+        }        
+        snapshotTaken = false;
+    }
+    
     //*******************************
     //*                             *
     //*    File Transfer Methods    *
@@ -562,7 +613,7 @@ public class RMIServer implements RMIServerInterface
     {
         try
         {
-            increaseVTimestamp();
+            increaseTimestamp();
             byte[] filedata = leader.downloadFile(fileName, vectorTimestamp);
             File file = new File(filesDirectory + "/" + fileName);
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(filesDirectory + "/" + fileName));
@@ -588,7 +639,7 @@ public class RMIServer implements RMIServerInterface
     {
         try
         {
-            increaseVTimestamp();
+            increaseTimestamp();
             return leader.getFileList(vectorTimestamp);
         } catch (RemoteException ex)
         {
@@ -620,7 +671,7 @@ public class RMIServer implements RMIServerInterface
         int id = 0;
         try
         {
-            increaseVTimestamp();
+            increaseTimestamp();
             id = leader.getProcessID(vectorTimestamp);
         } catch (Exception ex)
         {
@@ -648,7 +699,7 @@ public class RMIServer implements RMIServerInterface
     {
         try
         {
-            increaseVTimestamp();
+            increaseTimestamp();
             this.startElection(vectorTimestamp);
         } catch (RemoteException ex)
         {
@@ -661,16 +712,17 @@ public class RMIServer implements RMIServerInterface
         return this.electionStatus;
     }
 
-    public String startSnapshot()
+    public Map<Integer, Snapshot> getSystemSnapshot()
     {
-        return this.vectorTimestamp.toString();
+        return systemSnapshot;
     }
-
+    
+    
     //*******************************
-    //*                             *
-    //*    Convenience Methods      *
-    //*                             *
-    //*******************************
+//*                             *
+//*    Convenience Methods      *
+//*                             *
+//*******************************
     public String getTimeAsString()
     {
         Date date = new Date(currentTime);

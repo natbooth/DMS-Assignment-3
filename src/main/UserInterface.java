@@ -11,6 +11,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.rmi.RemoteException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListCellRenderer;
@@ -41,7 +43,7 @@ public class UserInterface extends javax.swing.JFrame
     public UserInterface(final RMIServer server)
     {
 
-        // Set reffrence to server
+        // Set reference to server
         this.server = server;
 
         // Setup GUI
@@ -110,6 +112,16 @@ public class UserInterface extends javax.swing.JFrame
                 server.stopServer();
             }
         });
+//        server.registerListener(this);
+        TimerTask tickTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {                
+                updateInfo();
+            }
+        };
+        new Timer().scheduleAtFixedRate(tickTask, 0, 1000);
     }
 
     /**
@@ -533,6 +545,7 @@ public class UserInterface extends javax.swing.JFrame
     private void jButtonRefreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRefreshActionPerformed
     {//GEN-HEADEREND:event_jButtonRefreshActionPerformed
         updateInfo();
+        System.out.println(evt.toString());
     }//GEN-LAST:event_jButtonRefreshActionPerformed
 
     private void jTextFieldCoordinatorAddressActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jTextFieldCoordinatorAddressActionPerformed
@@ -548,7 +561,8 @@ public class UserInterface extends javax.swing.JFrame
 
     private void jButtonTakeSnapshotActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTakeSnapshotActionPerformed
     {//GEN-HEADEREND:event_jButtonTakeSnapshotActionPerformed
-        JOptionPane.showMessageDialog(this, "Snapshot is " + server.startSnapshot(), "Snapshot", JOptionPane.PLAIN_MESSAGE);
+        server.startSnapshot();
+        JOptionPane.showMessageDialog(this, "Snapshot is " + server.getSystemSnapshot().toString().replace(',', '\n'), "Snapshot", JOptionPane.PLAIN_MESSAGE);
 
     }//GEN-LAST:event_jButtonTakeSnapshotActionPerformed
 
@@ -651,7 +665,7 @@ public class UserInterface extends javax.swing.JFrame
         }
     }
 
-    private void updateInfo()
+    public void updateInfo()
     {
         // IP Address
         jTextFieldIPAddress.setText(server.getLocalIPAddress());
