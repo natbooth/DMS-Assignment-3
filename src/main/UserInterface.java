@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package main;
-
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-=======
 package main;
 
 import java.awt.Color;
@@ -32,20 +18,11 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
->>>>>>> origin/GUI
 
 /**
  *
  * @author Nat
  */
-<<<<<<< HEAD
-public class UserInterface extends javax.swing.JFrame {
-
-    /**
-     * Creates new form UserInterface
-     */
-    public UserInterface() {
-=======
 public class UserInterface extends javax.swing.JFrame
 {
 
@@ -64,7 +41,6 @@ public class UserInterface extends javax.swing.JFrame
         this.server = server;
 
         // Setup GUI
->>>>>>> origin/GUI
         this.setTitle("DMS Assignment 3");
 
         this.setSize(854 + 2, 480 + 26);
@@ -77,15 +53,6 @@ public class UserInterface extends javax.swing.JFrame
         this.setLookAndFeel();
         //this.setUndecorated(true);
 
-<<<<<<< HEAD
-        initComponents();
-
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                // TODO Shutdown Server
-            }
-        });
-=======
         //Initilise Components
         initComponents();
 
@@ -152,7 +119,6 @@ public class UserInterface extends javax.swing.JFrame
         new Timer().scheduleAtFixedRate(tickTask, 0, 1000);
         server.setListener(this);
         this.eventList = new ArrayList();
->>>>>>> origin/GUI
     }
 
     /**
@@ -162,15 +128,6 @@ public class UserInterface extends javax.swing.JFrame
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-<<<<<<< HEAD
-    private void initComponents() {
-
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jButtonStartStopServer = new javax.swing.JButton();
-        jTextFieldCoordinatorAddress = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
-=======
     private void initComponents()
     {
 
@@ -179,7 +136,6 @@ public class UserInterface extends javax.swing.JFrame
         jButtonStartStopServer = new javax.swing.JButton();
         jTextFieldCoordinatorAddress = new javax.swing.JTextField();
         jLabelCoordinatorAddress = new javax.swing.JLabel();
->>>>>>> origin/GUI
         jLabelElectionInformationTitle = new javax.swing.JLabel();
         jLabelServerStatusTitle = new javax.swing.JLabel();
         jLabelIPAddress = new javax.swing.JLabel();
@@ -194,23 +150,6 @@ public class UserInterface extends javax.swing.JFrame
         jLabelServerStatus = new javax.swing.JLabel();
         jLabelElectionStatus = new javax.swing.JLabel();
         jLabelFilesTitle = new javax.swing.JLabel();
-<<<<<<< HEAD
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTreeFiles = new javax.swing.JTree();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("DMS Assignment 3");
-        setPreferredSize(new java.awt.Dimension(800, 480));
-
-        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
-
-        jLabel1.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        jLabel1.setText("DMS Assignment 3");
-
-        jButtonStartStopServer.setText("Start Server");
-        jButtonStartStopServer.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-=======
         jButtonSyncFile = new javax.swing.JButton();
         jButtonGetFileList = new javax.swing.JButton();
         jButtonRefresh = new javax.swing.JButton();
@@ -236,16 +175,10 @@ public class UserInterface extends javax.swing.JFrame
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
->>>>>>> origin/GUI
                 jButtonStartStopServerActionPerformed(evt);
             }
         });
 
-<<<<<<< HEAD
-        jTextFieldCoordinatorAddress.setText("255.255.255.255");
-
-        jLabel2.setText("Coordinator Address");
-=======
         jTextFieldCoordinatorAddress.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -255,7 +188,6 @@ public class UserInterface extends javax.swing.JFrame
         });
 
         jLabelCoordinatorAddress.setText("Coordinator Address");
->>>>>>> origin/GUI
 
         jLabelElectionInformationTitle.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         jLabelElectionInformationTitle.setText("Election Information");
@@ -266,40 +198,21 @@ public class UserInterface extends javax.swing.JFrame
         jLabelIPAddress.setText("IP Address");
 
         jTextFieldIPAddress.setEditable(false);
-<<<<<<< HEAD
-        jTextFieldIPAddress.setText("255.255.255.255");
-=======
         jTextFieldIPAddress.setText(server.getLocalIPAddress());
->>>>>>> origin/GUI
 
         jLabelProcessID.setText("Process ID");
 
         jTextFieldProcessID.setEditable(false);
-<<<<<<< HEAD
-        jTextFieldProcessID.setText("1");
-=======
         jTextFieldProcessID.setText(Integer.toString(server.getLocalProcessID()));
->>>>>>> origin/GUI
 
         jLabelCoordinatorID.setText("Coordinator ID");
 
         jTextFieldCoordinatorID.setEditable(false);
-<<<<<<< HEAD
-        jTextFieldCoordinatorID.setText("1");
-=======
         jTextFieldCoordinatorID.setText(Integer.toString(server.getLeaderID()));
->>>>>>> origin/GUI
 
         jLabelPort.setText("Port");
 
         jTextFieldPort.setEditable(false);
-<<<<<<< HEAD
-        jTextFieldPort.setText("65535");
-
-        jButtonForceElection.setText("Force Election");
-        jButtonForceElection.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-=======
         jTextFieldPort.setText(Integer.toString(server.RMI_PORT));
 
         jButtonForceElection.setText("Force Election");
@@ -308,7 +221,6 @@ public class UserInterface extends javax.swing.JFrame
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
->>>>>>> origin/GUI
                 jButtonForceElectionActionPerformed(evt);
             }
         });
@@ -317,110 +229,6 @@ public class UserInterface extends javax.swing.JFrame
         jLabelServerStatus.setText("Stopped");
         jLabelServerStatus.setOpaque(true);
 
-<<<<<<< HEAD
-        jLabelElectionStatus.setBackground(new java.awt.Color(0, 255, 0));
-        jLabelElectionStatus.setText("Completed");
-        jLabelElectionStatus.setOpaque(true);
-
-        jLabelFilesTitle.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        jLabelFilesTitle.setText("Files");
-
-        jScrollPane1.setViewportView(jTreeFiles);
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jLabelElectionInformationTitle, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButtonForceElection))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jLabel1)
-                        .addComponent(jLabelServerStatusTitle)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabelCoordinatorID)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextFieldCoordinatorID, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabelProcessID)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextFieldProcessID, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabelPort)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextFieldPort, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabelIPAddress)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextFieldIPAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jLabelServerStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(jTextFieldCoordinatorAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                        .addGap(30, 30, 30)
-                                        .addComponent(jButtonStartStopServer, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
-                .addGap(188, 188, 188)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabelFilesTitle)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(71, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelServerStatusTitle)
-                    .addComponent(jLabelFilesTitle))
-                .addGap(11, 11, 11)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(jTextFieldCoordinatorAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButtonStartStopServer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jLabelServerStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabelIPAddress)
-                            .addComponent(jTextFieldIPAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabelPort)
-                            .addComponent(jTextFieldPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(14, 14, 14)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabelProcessID)
-                            .addComponent(jTextFieldProcessID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabelCoordinatorID)
-                            .addComponent(jTextFieldCoordinatorID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabelElectionInformationTitle)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButtonForceElection, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(120, 120, 120))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 304, javax.swing.GroupLayout.PREFERRED_SIZE)
-=======
         jLabelElectionStatus.setBackground(new java.awt.Color(255, 0, 0));
         jLabelElectionStatus.setText("Not Started");
         jLabelElectionStatus.setOpaque(true);
@@ -615,7 +423,6 @@ public class UserInterface extends javax.swing.JFrame
                         .addGap(70, 70, 70))
                     .addGroup(jPanelMainLayout.createSequentialGroup()
                         .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
->>>>>>> origin/GUI
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
 
@@ -623,37 +430,17 @@ public class UserInterface extends javax.swing.JFrame
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-<<<<<<< HEAD
-            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-=======
             .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, 491, Short.MAX_VALUE)
->>>>>>> origin/GUI
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonStartStopServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartStopServerActionPerformed
-<<<<<<< HEAD
-        if (this.jButtonStartStopServer.getText().equals("Start Server")) {
-            this.jLabelServerStatus.setText("Starting...");
-            // TODO Start Server
-            this.jLabelServerStatus.setText("Running");
-            this.jButtonStartStopServer.setText("Stop Server");
-        }else if (this.jButtonStartStopServer.getText().equals("Stop Server")){
-            this.jLabelServerStatus.setText("Stopping...");
-            // TODO Stop Server
-            this.jLabelServerStatus.setText("Stopped");
-            this.jButtonStartStopServer.setText("Start Server");
-=======
         if (this.jButtonStartStopServer.getText().equals("Start Server"))
         {
             this.jLabelServerStatus.setText("Starting...");
@@ -706,26 +493,11 @@ public class UserInterface extends javax.swing.JFrame
             });
             t1.start();
 
->>>>>>> origin/GUI
         }
     }//GEN-LAST:event_jButtonStartStopServerActionPerformed
 
     private void jButtonForceElectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonForceElectionActionPerformed
         this.jLabelElectionStatus.setText("Election Started");
-<<<<<<< HEAD
-        // TODO Start Election Process
-    }//GEN-LAST:event_jButtonForceElectionActionPerformed
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new UserInterface().setVisible(true);
-=======
         this.jLabelElectionStatus.setBackground(Color.yellow);
 
         // Start Election Process
@@ -790,18 +562,12 @@ public class UserInterface extends javax.swing.JFrame
                 RMIServer server = new RMIServer();
                 UserInterface ui = new UserInterface(server);
                 ui.setVisible(true);
->>>>>>> origin/GUI
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonForceElection;
-<<<<<<< HEAD
-    private javax.swing.JButton jButtonStartStopServer;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-=======
     private javax.swing.JButton jButtonGetFileList;
     private javax.swing.JButton jButtonRefresh;
     private javax.swing.JButton jButtonStartStopServer;
@@ -809,7 +575,6 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JButton jButtonTakeSnapshot;
     private javax.swing.JButton jButtonUpdateSystemTime;
     private javax.swing.JLabel jLabelCoordinatorAddress;
->>>>>>> origin/GUI
     private javax.swing.JLabel jLabelCoordinatorID;
     private javax.swing.JLabel jLabelElectionInformationTitle;
     private javax.swing.JLabel jLabelElectionStatus;
@@ -819,41 +584,16 @@ public class UserInterface extends javax.swing.JFrame
     private javax.swing.JLabel jLabelProcessID;
     private javax.swing.JLabel jLabelServerStatus;
     private javax.swing.JLabel jLabelServerStatusTitle;
-<<<<<<< HEAD
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
-=======
     private javax.swing.JLabel jLabelServersConnected;
     private javax.swing.JLabel jLabelSystemTime;
     private javax.swing.JLabel jLabelTitle;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JScrollPane jScrollPaneFiles;
->>>>>>> origin/GUI
     private javax.swing.JTextField jTextFieldCoordinatorAddress;
     private javax.swing.JTextField jTextFieldCoordinatorID;
     private javax.swing.JTextField jTextFieldIPAddress;
     private javax.swing.JTextField jTextFieldPort;
     private javax.swing.JTextField jTextFieldProcessID;
-<<<<<<< HEAD
-    private javax.swing.JTree jTreeFiles;
-    // End of variables declaration//GEN-END:variables
-
-    // Conveniance method to set look and feel
-    private void setLookAndFeel() {
-        //Set Look and Feal
-        try {
-            // Try Custom Look and Feal
-            UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            try {
-                // Set System L&F
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            }
-        }
-    }
-
-=======
     private javax.swing.JTextField jTextFieldServersConnected;
     private javax.swing.JTextField jTextFieldSystemTime;
     // End of variables declaration//GEN-END:variables
@@ -1062,5 +802,4 @@ public class UserInterface extends javax.swing.JFrame
             }
         }
     }
->>>>>>> origin/GUI
 }
