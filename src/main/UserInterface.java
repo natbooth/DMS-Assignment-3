@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package main;
 
 import java.awt.Color;
@@ -10,11 +5,10 @@ import java.awt.Component;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -34,6 +28,7 @@ public class UserInterface extends javax.swing.JFrame
 
     RMIServer server;
     JList displayList;
+    List<String> eventList;
 
     /**
      * Creates new form UserInterface
@@ -42,7 +37,6 @@ public class UserInterface extends javax.swing.JFrame
      */
     public UserInterface(final RMIServer server)
     {
-
         // Set reference to server
         this.server = server;
 
@@ -117,11 +111,14 @@ public class UserInterface extends javax.swing.JFrame
         {
             @Override
             public void run()
-            {                
-                updateInfo();
+            {
+                updateTime();
+                processEvents();
             }
         };
         new Timer().scheduleAtFixedRate(tickTask, 0, 1000);
+        server.setListener(this);
+        this.eventList = new ArrayList();
     }
 
     /**
@@ -166,7 +163,6 @@ public class UserInterface extends javax.swing.JFrame
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DMS Assignment 3");
-        setPreferredSize(new java.awt.Dimension(854, 480));
 
         jPanelMain.setBackground(new java.awt.Color(255, 255, 255));
         jPanelMain.setPreferredSize(new java.awt.Dimension(854, 480));
@@ -238,7 +234,7 @@ public class UserInterface extends javax.swing.JFrame
         jLabelElectionStatus.setOpaque(true);
 
         jLabelFilesTitle.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        jLabelFilesTitle.setText("Files");
+        jLabelFilesTitle.setText("Server Files");
 
         jButtonSyncFile.setText("Sync File");
         jButtonSyncFile.setEnabled(false);
@@ -250,7 +246,7 @@ public class UserInterface extends javax.swing.JFrame
             }
         });
 
-        jButtonGetFileList.setText("Get File List");
+        jButtonGetFileList.setText("Update File List");
         jButtonGetFileList.setEnabled(false);
         jButtonGetFileList.addActionListener(new java.awt.event.ActionListener()
         {
@@ -512,17 +508,7 @@ public class UserInterface extends javax.swing.JFrame
 
     private void jButtonGetFileListActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonGetFileListActionPerformed
     {//GEN-HEADEREND:event_jButtonGetFileListActionPerformed
-        // Get File List
-        File[] fileList = server.getLeaderFileList();
-        if (fileList != null)
-        {
-            displayList = new JList(fileList);
-            displayList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-            displayList.setCellRenderer(new CellRenderer());
-            displayList.setLayoutOrientation(javax.swing.JList.HORIZONTAL_WRAP);
-            displayList.setName("displayList");
-            jScrollPaneFiles.setViewportView(displayList);
-        }
+        displayFileList();
     }//GEN-LAST:event_jButtonGetFileListActionPerformed
 
     private void jButtonSyncFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonSyncFileActionPerformed
@@ -545,7 +531,6 @@ public class UserInterface extends javax.swing.JFrame
     private void jButtonRefreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRefreshActionPerformed
     {//GEN-HEADEREND:event_jButtonRefreshActionPerformed
         updateInfo();
-        System.out.println(evt.toString());
     }//GEN-LAST:event_jButtonRefreshActionPerformed
 
     private void jTextFieldCoordinatorAddressActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jTextFieldCoordinatorAddressActionPerformed
@@ -562,8 +547,6 @@ public class UserInterface extends javax.swing.JFrame
     private void jButtonTakeSnapshotActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTakeSnapshotActionPerformed
     {//GEN-HEADEREND:event_jButtonTakeSnapshotActionPerformed
         server.startSnapshot();
-        JOptionPane.showMessageDialog(this, "Snapshot is " + server.getSystemSnapshot().toString().replace(',', '\n'), "Snapshot", JOptionPane.PLAIN_MESSAGE);
-
     }//GEN-LAST:event_jButtonTakeSnapshotActionPerformed
 
     /**
@@ -577,7 +560,8 @@ public class UserInterface extends javax.swing.JFrame
             public void run()
             {
                 RMIServer server = new RMIServer();
-                new UserInterface(server).setVisible(true);
+                UserInterface ui = new UserInterface(server);
+                ui.setVisible(true);
             }
         });
     }
@@ -665,6 +649,9 @@ public class UserInterface extends javax.swing.JFrame
         }
     }
 
+    /**
+     * Updates the GUI.
+     */
     public void updateInfo()
     {
         // IP Address
@@ -678,7 +665,7 @@ public class UserInterface extends javax.swing.JFrame
         // Servers Connected
         jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
         // System Time
-        this.jTextFieldSystemTime.setText(server.getTimeAsString());
+        updateTime();
 
         //Server Status
         String serverStatus = server.getServerStatus();
@@ -754,7 +741,65 @@ public class UserInterface extends javax.swing.JFrame
             this.jLabelElectionStatus.setText("Complete");
             this.jLabelElectionStatus.setBackground(Color.green);
         }
-
+        displayFileList();
     }
 
+    /**
+     * Method to receive events from the server thread.
+     *
+     */
+    public void notifyChange(String notice)
+    {
+        eventList.add(notice);
+    }
+
+    /**
+     * Processes any events received from the server thread.
+     */
+    private void processEvents()
+    {
+        for (String event : eventList)
+        {
+            switch (event)
+            {
+                case "SNAPSHOT":
+                    JOptionPane.showMessageDialog(this, "Snapshot is " + server.getSystemSnapshot().toString().replace(',', '\n'), "Snapshot", JOptionPane.PLAIN_MESSAGE);
+                    break;
+
+                default:
+                    System.out.println("Received a '" + event + "' event notification");
+            }
+        }
+        eventList.clear();
+    }
+
+    /**
+     * Updates the time text box.
+     */
+    private void updateTime()
+    {
+        this.jTextFieldSystemTime.setText(server.getTimeAsString());
+    }
+
+    /**
+     * Displays the files currently on the server on the interface.
+     */
+    private void displayFileList()
+    {
+        if (server.getServerStatus().equals("running"))
+        {
+
+            // Get File List
+            File[] fileList = server.getLeaderFileList();
+            if (fileList != null)
+            {
+                displayList = new JList(fileList);
+                displayList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+                displayList.setCellRenderer(new CellRenderer());
+                displayList.setLayoutOrientation(javax.swing.JList.HORIZONTAL_WRAP);
+                displayList.setName("displayList");
+                jScrollPaneFiles.setViewportView(displayList);
+            }
+        }
+    }
 }
