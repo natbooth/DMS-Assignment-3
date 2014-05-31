@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -10,17 +11,60 @@ import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+=======
+package main;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileSystemView;
+>>>>>>> origin/GUI
 
 /**
  *
  * @author Nat
  */
+<<<<<<< HEAD
 public class UserInterface extends javax.swing.JFrame {
 
     /**
      * Creates new form UserInterface
      */
     public UserInterface() {
+=======
+public class UserInterface extends javax.swing.JFrame
+{
+
+    RMIServer server;
+    JList displayList;
+    List<String> eventList;
+
+    /**
+     * Creates new form UserInterface
+     *
+     * @param server
+     */
+    public UserInterface(final RMIServer server)
+    {
+        // Set reference to server
+        this.server = server;
+
+        // Setup GUI
+>>>>>>> origin/GUI
         this.setTitle("DMS Assignment 3");
 
         this.setSize(854 + 2, 480 + 26);
@@ -33,6 +77,7 @@ public class UserInterface extends javax.swing.JFrame {
         this.setLookAndFeel();
         //this.setUndecorated(true);
 
+<<<<<<< HEAD
         initComponents();
 
         addWindowListener(new WindowAdapter() {
@@ -40,6 +85,74 @@ public class UserInterface extends javax.swing.JFrame {
                 // TODO Shutdown Server
             }
         });
+=======
+        //Initilise Components
+        initComponents();
+
+        // Update Start/Stop Server Button
+        jTextFieldCoordinatorAddress.getDocument().addDocumentListener(new DocumentListener()
+        {
+            @Override
+            public void insertUpdate(DocumentEvent e)
+            {
+                if (jTextFieldCoordinatorAddress.getText().equals(""))
+                {
+                    jButtonStartStopServer.setText("Start Server");
+                } else
+                {
+                    jButtonStartStopServer.setText("Connect");
+                }
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e)
+            {
+                if (jTextFieldCoordinatorAddress.getText().equals(""))
+                {
+                    jButtonStartStopServer.setText("Start Server");
+                } else
+                {
+                    jButtonStartStopServer.setText("Connect");
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e)
+            {
+                if (jTextFieldCoordinatorAddress.getText().equals(""))
+                {
+                    jButtonStartStopServer.setText("Start Server");
+                } else
+                {
+                    jButtonStartStopServer.setText("Connect");
+                }
+            }
+        });
+
+        addWindowListener(new WindowAdapter()
+        {
+            public void windowClosing(WindowEvent e)
+            {
+                // Hide window provide visual feedback while server shutsdown
+                e.getWindow().setVisible(false);
+                // Stop Server
+                server.stopServer();
+            }
+        });
+//        server.registerListener(this);
+        TimerTask tickTask = new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                updateTime();
+                processEvents();
+            }
+        };
+        new Timer().scheduleAtFixedRate(tickTask, 0, 1000);
+        server.setListener(this);
+        this.eventList = new ArrayList();
+>>>>>>> origin/GUI
     }
 
     /**
@@ -49,6 +162,7 @@ public class UserInterface extends javax.swing.JFrame {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+<<<<<<< HEAD
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
@@ -56,6 +170,16 @@ public class UserInterface extends javax.swing.JFrame {
         jButtonStartStopServer = new javax.swing.JButton();
         jTextFieldCoordinatorAddress = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
+=======
+    private void initComponents()
+    {
+
+        jPanelMain = new javax.swing.JPanel();
+        jLabelTitle = new javax.swing.JLabel();
+        jButtonStartStopServer = new javax.swing.JButton();
+        jTextFieldCoordinatorAddress = new javax.swing.JTextField();
+        jLabelCoordinatorAddress = new javax.swing.JLabel();
+>>>>>>> origin/GUI
         jLabelElectionInformationTitle = new javax.swing.JLabel();
         jLabelServerStatusTitle = new javax.swing.JLabel();
         jLabelIPAddress = new javax.swing.JLabel();
@@ -70,6 +194,7 @@ public class UserInterface extends javax.swing.JFrame {
         jLabelServerStatus = new javax.swing.JLabel();
         jLabelElectionStatus = new javax.swing.JLabel();
         jLabelFilesTitle = new javax.swing.JLabel();
+<<<<<<< HEAD
         jScrollPane1 = new javax.swing.JScrollPane();
         jTreeFiles = new javax.swing.JTree();
 
@@ -85,13 +210,52 @@ public class UserInterface extends javax.swing.JFrame {
         jButtonStartStopServer.setText("Start Server");
         jButtonStartStopServer.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
+=======
+        jButtonSyncFile = new javax.swing.JButton();
+        jButtonGetFileList = new javax.swing.JButton();
+        jButtonRefresh = new javax.swing.JButton();
+        jLabelServersConnected = new javax.swing.JLabel();
+        jTextFieldServersConnected = new javax.swing.JTextField();
+        jScrollPaneFiles = new javax.swing.JScrollPane();
+        jLabelSystemTime = new javax.swing.JLabel();
+        jTextFieldSystemTime = new javax.swing.JTextField();
+        jButtonUpdateSystemTime = new javax.swing.JButton();
+        jButtonTakeSnapshot = new javax.swing.JButton();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("DMS Assignment 3");
+
+        jPanelMain.setBackground(new java.awt.Color(255, 255, 255));
+        jPanelMain.setPreferredSize(new java.awt.Dimension(854, 480));
+
+        jLabelTitle.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
+        jLabelTitle.setText("DMS Assignment 3");
+
+        jButtonStartStopServer.setText("Start Server");
+        jButtonStartStopServer.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+>>>>>>> origin/GUI
                 jButtonStartStopServerActionPerformed(evt);
             }
         });
 
+<<<<<<< HEAD
         jTextFieldCoordinatorAddress.setText("255.255.255.255");
 
         jLabel2.setText("Coordinator Address");
+=======
+        jTextFieldCoordinatorAddress.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jTextFieldCoordinatorAddressActionPerformed(evt);
+            }
+        });
+
+        jLabelCoordinatorAddress.setText("Coordinator Address");
+>>>>>>> origin/GUI
 
         jLabelElectionInformationTitle.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         jLabelElectionInformationTitle.setText("Election Information");
@@ -102,26 +266,49 @@ public class UserInterface extends javax.swing.JFrame {
         jLabelIPAddress.setText("IP Address");
 
         jTextFieldIPAddress.setEditable(false);
+<<<<<<< HEAD
         jTextFieldIPAddress.setText("255.255.255.255");
+=======
+        jTextFieldIPAddress.setText(server.getLocalIPAddress());
+>>>>>>> origin/GUI
 
         jLabelProcessID.setText("Process ID");
 
         jTextFieldProcessID.setEditable(false);
+<<<<<<< HEAD
         jTextFieldProcessID.setText("1");
+=======
+        jTextFieldProcessID.setText(Integer.toString(server.getLocalProcessID()));
+>>>>>>> origin/GUI
 
         jLabelCoordinatorID.setText("Coordinator ID");
 
         jTextFieldCoordinatorID.setEditable(false);
+<<<<<<< HEAD
         jTextFieldCoordinatorID.setText("1");
+=======
+        jTextFieldCoordinatorID.setText(Integer.toString(server.getLeaderID()));
+>>>>>>> origin/GUI
 
         jLabelPort.setText("Port");
 
         jTextFieldPort.setEditable(false);
+<<<<<<< HEAD
         jTextFieldPort.setText("65535");
 
         jButtonForceElection.setText("Force Election");
         jButtonForceElection.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
+=======
+        jTextFieldPort.setText(Integer.toString(server.RMI_PORT));
+
+        jButtonForceElection.setText("Force Election");
+        jButtonForceElection.setEnabled(false);
+        jButtonForceElection.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+>>>>>>> origin/GUI
                 jButtonForceElectionActionPerformed(evt);
             }
         });
@@ -130,6 +317,7 @@ public class UserInterface extends javax.swing.JFrame {
         jLabelServerStatus.setText("Stopped");
         jLabelServerStatus.setOpaque(true);
 
+<<<<<<< HEAD
         jLabelElectionStatus.setBackground(new java.awt.Color(0, 255, 0));
         jLabelElectionStatus.setText("Completed");
         jLabelElectionStatus.setOpaque(true);
@@ -232,6 +420,202 @@ public class UserInterface extends javax.swing.JFrame {
                         .addGap(120, 120, 120))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 304, javax.swing.GroupLayout.PREFERRED_SIZE)
+=======
+        jLabelElectionStatus.setBackground(new java.awt.Color(255, 0, 0));
+        jLabelElectionStatus.setText("Not Started");
+        jLabelElectionStatus.setOpaque(true);
+
+        jLabelFilesTitle.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabelFilesTitle.setText("Server Files");
+
+        jButtonSyncFile.setText("Sync File");
+        jButtonSyncFile.setEnabled(false);
+        jButtonSyncFile.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonSyncFileActionPerformed(evt);
+            }
+        });
+
+        jButtonGetFileList.setText("Update File List");
+        jButtonGetFileList.setEnabled(false);
+        jButtonGetFileList.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonGetFileListActionPerformed(evt);
+            }
+        });
+
+        jButtonRefresh.setText("Refresh");
+        jButtonRefresh.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonRefreshActionPerformed(evt);
+            }
+        });
+
+        jLabelServersConnected.setText("Servers Connected");
+
+        jTextFieldServersConnected.setEditable(false);
+        jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
+
+        jLabelSystemTime.setText("SystemTime");
+
+        jTextFieldSystemTime.setEditable(false);
+        jTextFieldSystemTime.setText(server.getTimeAsString());
+
+        jButtonUpdateSystemTime.setText("Update");
+        jButtonUpdateSystemTime.setEnabled(false);
+        jButtonUpdateSystemTime.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonUpdateSystemTimeActionPerformed(evt);
+            }
+        });
+
+        jButtonTakeSnapshot.setText("Take Snapshot");
+        jButtonTakeSnapshot.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonTakeSnapshotActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanelMainLayout = new javax.swing.GroupLayout(jPanelMain);
+        jPanelMain.setLayout(jPanelMainLayout);
+        jPanelMainLayout.setHorizontalGroup(
+            jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelMainLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jLabelElectionInformationTitle)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabelTitle)
+                            .addComponent(jLabelServerStatusTitle)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(jPanelMainLayout.createSequentialGroup()
+                                    .addComponent(jLabelCoordinatorID)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldCoordinatorID, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanelMainLayout.createSequentialGroup()
+                                    .addComponent(jLabelProcessID)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldProcessID, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanelMainLayout.createSequentialGroup()
+                                    .addComponent(jLabelPort)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldPort, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanelMainLayout.createSequentialGroup()
+                                    .addComponent(jLabelIPAddress)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldIPAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanelMainLayout.createSequentialGroup()
+                                    .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(jLabelCoordinatorAddress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabelServerStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanelMainLayout.createSequentialGroup()
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                            .addComponent(jTextFieldCoordinatorAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createSequentialGroup()
+                                            .addGap(30, 30, 30)
+                                            .addComponent(jButtonStartStopServer, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createSequentialGroup()
+                            .addComponent(jLabelServersConnected)
+                            .addGap(18, 18, 18)
+                            .addComponent(jTextFieldServersConnected, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jButtonForceElection))
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jLabelSystemTime)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jTextFieldSystemTime, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jButtonUpdateSystemTime)
+                        .addGap(105, 105, 105)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabelFilesTitle)
+                                .addComponent(jButtonGetFileList)
+                                .addComponent(jScrollPaneFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jButtonSyncFile, javax.swing.GroupLayout.Alignment.TRAILING)))
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jButtonTakeSnapshot)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButtonRefresh)))
+                .addContainerGap(76, Short.MAX_VALUE))
+        );
+        jPanelMainLayout.setVerticalGroup(
+            jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelMainLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelTitle)
+                    .addComponent(jButtonTakeSnapshot)
+                    .addComponent(jButtonRefresh))
+                .addGap(15, 15, 15)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelServerStatusTitle)
+                    .addComponent(jLabelFilesTitle))
+                .addGap(10, 10, 10)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelCoordinatorAddress)
+                    .addComponent(jTextFieldCoordinatorAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonGetFileList))
+                .addGap(16, 16, 16)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jButtonStartStopServer)
+                            .addComponent(jLabelServerStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(16, 16, 16)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelIPAddress)
+                            .addComponent(jTextFieldIPAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelPort)
+                            .addComponent(jTextFieldPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(14, 14, 14)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelProcessID)
+                            .addComponent(jTextFieldProcessID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelCoordinatorID)
+                            .addComponent(jTextFieldCoordinatorID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextFieldServersConnected, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabelServersConnected))
+                        .addGap(9, 9, 9)
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextFieldSystemTime, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabelSystemTime)
+                            .addComponent(jButtonUpdateSystemTime))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabelElectionInformationTitle))
+                    .addComponent(jScrollPaneFiles))
+                .addGap(18, 18, 18)
+                .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addGroup(jPanelMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jButtonForceElection, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jButtonSyncFile))
+                        .addGap(70, 70, 70))
+                    .addGroup(jPanelMainLayout.createSequentialGroup()
+                        .addComponent(jLabelElectionStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+>>>>>>> origin/GUI
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
 
@@ -239,17 +623,26 @@ public class UserInterface extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+<<<<<<< HEAD
             .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+=======
+            .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, 491, Short.MAX_VALUE)
+>>>>>>> origin/GUI
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonStartStopServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartStopServerActionPerformed
+<<<<<<< HEAD
         if (this.jButtonStartStopServer.getText().equals("Start Server")) {
             this.jLabelServerStatus.setText("Starting...");
             // TODO Start Server
@@ -260,11 +653,66 @@ public class UserInterface extends javax.swing.JFrame {
             // TODO Stop Server
             this.jLabelServerStatus.setText("Stopped");
             this.jButtonStartStopServer.setText("Start Server");
+=======
+        if (this.jButtonStartStopServer.getText().equals("Start Server"))
+        {
+            this.jLabelServerStatus.setText("Starting...");
+            this.jLabelServerStatus.setBackground(Color.yellow);
+
+            // Start Server
+            Thread t1 = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    server.startServer(server);
+                    updateInfo();
+                }
+            });
+            t1.start();
+
+        } else if (this.jButtonStartStopServer.getText().equals("Connect"))
+        {
+            this.jLabelServerStatus.setText("Connecting...");
+            this.jLabelServerStatus.setBackground(Color.yellow);
+
+            // Connect to Server
+            Thread t1 = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    server.connect(jTextFieldCoordinatorAddress.getText());
+                    updateInfo();
+                }
+            });
+            t1.start();
+
+        } else if (this.jButtonStartStopServer.getText().equals("Stop Server") || this.jButtonStartStopServer.getText().equals("Disconnect"))
+        {
+            this.jLabelServerStatus.setText("Stopping...");
+            this.jLabelServerStatus.setBackground(Color.yellow);
+            jButtonUpdateSystemTime.setEnabled(false);
+            jButtonForceElection.setEnabled(false);
+            jButtonGetFileList.setEnabled(false);
+            jButtonSyncFile.setEnabled(false);
+
+            // Stop Server
+            Thread t1 = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    server.stopServer();
+                    updateInfo();
+                }
+            });
+            t1.start();
+
+>>>>>>> origin/GUI
         }
     }//GEN-LAST:event_jButtonStartStopServerActionPerformed
 
     private void jButtonForceElectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonForceElectionActionPerformed
         this.jLabelElectionStatus.setText("Election Started");
+<<<<<<< HEAD
         // TODO Start Election Process
     }//GEN-LAST:event_jButtonForceElectionActionPerformed
 
@@ -277,15 +725,91 @@ public class UserInterface extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new UserInterface().setVisible(true);
+=======
+        this.jLabelElectionStatus.setBackground(Color.yellow);
+
+        // Start Election Process
+        server.forceElection();
+        updateInfo();
+
+    }//GEN-LAST:event_jButtonForceElectionActionPerformed
+
+    private void jButtonGetFileListActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonGetFileListActionPerformed
+    {//GEN-HEADEREND:event_jButtonGetFileListActionPerformed
+        displayFileList();
+    }//GEN-LAST:event_jButtonGetFileListActionPerformed
+
+    private void jButtonSyncFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonSyncFileActionPerformed
+    {//GEN-HEADEREND:event_jButtonSyncFileActionPerformed
+
+        this.jButtonSyncFile.setText("Syncing File...");
+        File selectedFile = (File) displayList.getSelectedValue();
+        if (selectedFile != null)
+        {
+            server.getFileFromLeader(selectedFile.getName());
+            JOptionPane.showMessageDialog(this, "Transfer complete.", "Transfer Complete", JOptionPane.PLAIN_MESSAGE);
+        } else
+        {
+            JOptionPane.showMessageDialog(this, "Please select a file from the list first.", "Woops!", JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        this.jButtonSyncFile.setText("Sync File");
+    }//GEN-LAST:event_jButtonSyncFileActionPerformed
+
+    private void jButtonRefreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRefreshActionPerformed
+    {//GEN-HEADEREND:event_jButtonRefreshActionPerformed
+        updateInfo();
+    }//GEN-LAST:event_jButtonRefreshActionPerformed
+
+    private void jTextFieldCoordinatorAddressActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jTextFieldCoordinatorAddressActionPerformed
+    {//GEN-HEADEREND:event_jTextFieldCoordinatorAddressActionPerformed
+        jButtonStartStopServerActionPerformed(evt);
+    }//GEN-LAST:event_jTextFieldCoordinatorAddressActionPerformed
+
+    private void jButtonUpdateSystemTimeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonUpdateSystemTimeActionPerformed
+    {//GEN-HEADEREND:event_jButtonUpdateSystemTimeActionPerformed
+        server.syncTime();
+        updateInfo();
+    }//GEN-LAST:event_jButtonUpdateSystemTimeActionPerformed
+
+    private void jButtonTakeSnapshotActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTakeSnapshotActionPerformed
+    {//GEN-HEADEREND:event_jButtonTakeSnapshotActionPerformed
+        server.startSnapshot();
+    }//GEN-LAST:event_jButtonTakeSnapshotActionPerformed
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[])
+    {
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable()
+        {
+            public void run()
+            {
+                RMIServer server = new RMIServer();
+                UserInterface ui = new UserInterface(server);
+                ui.setVisible(true);
+>>>>>>> origin/GUI
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonForceElection;
+<<<<<<< HEAD
     private javax.swing.JButton jButtonStartStopServer;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+=======
+    private javax.swing.JButton jButtonGetFileList;
+    private javax.swing.JButton jButtonRefresh;
+    private javax.swing.JButton jButtonStartStopServer;
+    private javax.swing.JButton jButtonSyncFile;
+    private javax.swing.JButton jButtonTakeSnapshot;
+    private javax.swing.JButton jButtonUpdateSystemTime;
+    private javax.swing.JLabel jLabelCoordinatorAddress;
+>>>>>>> origin/GUI
     private javax.swing.JLabel jLabelCoordinatorID;
     private javax.swing.JLabel jLabelElectionInformationTitle;
     private javax.swing.JLabel jLabelElectionStatus;
@@ -295,13 +819,22 @@ public class UserInterface extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelProcessID;
     private javax.swing.JLabel jLabelServerStatus;
     private javax.swing.JLabel jLabelServerStatusTitle;
+<<<<<<< HEAD
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
+=======
+    private javax.swing.JLabel jLabelServersConnected;
+    private javax.swing.JLabel jLabelSystemTime;
+    private javax.swing.JLabel jLabelTitle;
+    private javax.swing.JPanel jPanelMain;
+    private javax.swing.JScrollPane jScrollPaneFiles;
+>>>>>>> origin/GUI
     private javax.swing.JTextField jTextFieldCoordinatorAddress;
     private javax.swing.JTextField jTextFieldCoordinatorID;
     private javax.swing.JTextField jTextFieldIPAddress;
     private javax.swing.JTextField jTextFieldPort;
     private javax.swing.JTextField jTextFieldProcessID;
+<<<<<<< HEAD
     private javax.swing.JTree jTreeFiles;
     // End of variables declaration//GEN-END:variables
 
@@ -320,4 +853,214 @@ public class UserInterface extends javax.swing.JFrame {
         }
     }
 
+=======
+    private javax.swing.JTextField jTextFieldServersConnected;
+    private javax.swing.JTextField jTextFieldSystemTime;
+    // End of variables declaration//GEN-END:variables
+
+    // Conveniance method to set look and feel
+    private void setLookAndFeel()
+    {
+        //Set Look and Feal
+        try
+        {
+            // Try Custom Look and Feal
+            UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex)
+        {
+            try
+            {
+                // Set System L&F
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e)
+            {
+            }
+        }
+    }
+
+    private static class CellRenderer extends DefaultListCellRenderer
+    {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value,
+                int index, boolean isSelected, boolean cellHasFocus)
+        {
+            if (value instanceof File)
+            {
+                File file = (File) value;
+                setText(file.getName());
+                setIcon(FileSystemView.getFileSystemView().getSystemIcon(file));
+                if (isSelected)
+                {
+                    setBackground(list.getSelectionBackground());
+                    setForeground(list.getSelectionForeground());
+                } else
+                {
+                    setBackground(list.getBackground());
+                    setForeground(list.getForeground());
+                }
+                setEnabled(list.isEnabled());
+                setFont(list.getFont());
+                setOpaque(true);
+            }
+            return this;
+        }
+    }
+
+    /**
+     * Updates the GUI.
+     */
+    public void updateInfo()
+    {
+        // IP Address
+        jTextFieldIPAddress.setText(server.getLocalIPAddress());
+        // Port
+        jTextFieldPort.setText(Integer.toString(server.RMI_PORT));
+        // ProcessID
+        jTextFieldProcessID.setText(Integer.toString(server.getLocalProcessID()));
+        // Leader ID
+        jTextFieldCoordinatorID.setText(Integer.toString(server.getLeaderID()));
+        // Servers Connected
+        jTextFieldServersConnected.setText(Integer.toString(server.getNumServersConnected()));
+        // System Time
+        updateTime();
+
+        //Server Status
+        String serverStatus = server.getServerStatus();
+        if (serverStatus.equals("starting"))
+        {
+            jButtonStartStopServer.setEnabled(false);
+            if (jTextFieldCoordinatorAddress.getText().equals(""))
+            {
+                jLabelServerStatus.setText("Starting...");
+            } else
+            {
+                jLabelServerStatus.setText("Connecting...");
+            }
+            this.jLabelServerStatus.setBackground(Color.yellow);
+        } else if (serverStatus.equals("running"))
+        {
+            jButtonStartStopServer.setEnabled(true);
+            jButtonUpdateSystemTime.setEnabled(true);
+            jButtonForceElection.setEnabled(true);
+            jButtonGetFileList.setEnabled(true);
+            jButtonSyncFile.setEnabled(true);
+            if (jTextFieldCoordinatorAddress.getText().equals(""))
+            {
+                jLabelServerStatus.setText("Running");
+                jButtonStartStopServer.setText("Stop Server");
+            } else
+            {
+                jLabelServerStatus.setText("Connected");
+                jButtonStartStopServer.setText("Disconnect");
+            }
+            this.jLabelServerStatus.setBackground(Color.green);
+        } else if (serverStatus.equals("stopping"))
+        {
+            jButtonStartStopServer.setEnabled(false);
+            if (jTextFieldCoordinatorAddress.getText().equals(""))
+            {
+                jLabelServerStatus.setText("Stopping...");
+            } else
+            {
+                jLabelServerStatus.setText("Disconnecting...");
+            }
+            this.jLabelServerStatus.setBackground(Color.yellow);
+        } else if (serverStatus.equals("stopped"))
+        {
+            jButtonStartStopServer.setEnabled(true);
+            if (jTextFieldCoordinatorAddress.getText().equals(""))
+            {
+                jLabelServerStatus.setText("Stopped");
+                jButtonStartStopServer.setText("Start Server");
+            } else
+            {
+                jLabelServerStatus.setText("Disconnected");
+                jButtonStartStopServer.setText("Connect");
+            }
+            this.jLabelServerStatus.setBackground(Color.red);
+        }
+
+        //Election Status
+        String electionStatus = server.getElectionStatus();
+        if (electionStatus.equals("notstarted"))
+        {
+            jButtonForceElection.setEnabled(false);
+            this.jLabelElectionStatus.setText("Not Started");
+            this.jLabelElectionStatus.setBackground(Color.red);
+        } else if (electionStatus.equals("started"))
+        {
+            jButtonForceElection.setEnabled(false);
+            this.jLabelElectionStatus.setText("Started");
+            this.jLabelElectionStatus.setBackground(Color.yellow);
+        } else if (electionStatus.equals("complete"))
+        {
+            jButtonForceElection.setEnabled(true);
+            this.jLabelElectionStatus.setText("Complete");
+            this.jLabelElectionStatus.setBackground(Color.green);
+        }
+        displayFileList();
+    }
+
+    /**
+     * Method to receive events from the server thread.
+     *
+     */
+    public void notifyChange(String notice)
+    {
+        eventList.add(notice);
+    }
+
+    /**
+     * Processes any events received from the server thread.
+     */
+    private void processEvents()
+    {
+        for (String event : eventList)
+        {
+            switch (event)
+            {
+                case "SNAPSHOT":
+                    JOptionPane.showMessageDialog(this, "Snapshot is " + server.getSystemSnapshot().toString().replace(',', '\n'), "Snapshot", JOptionPane.PLAIN_MESSAGE);
+                    break;
+
+                default:
+                    System.out.println("Received a '" + event + "' event notification");
+            }
+        }
+        eventList.clear();
+    }
+
+    /**
+     * Updates the time text box.
+     */
+    private void updateTime()
+    {
+        this.jTextFieldSystemTime.setText(server.getTimeAsString());
+    }
+
+    /**
+     * Displays the files currently on the server on the interface.
+     */
+    private void displayFileList()
+    {
+        if (server.getServerStatus().equals("running"))
+        {
+
+            // Get File List
+            File[] fileList = server.getLeaderFileList();
+            if (fileList != null)
+            {
+                displayList = new JList(fileList);
+                displayList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+                displayList.setCellRenderer(new CellRenderer());
+                displayList.setLayoutOrientation(javax.swing.JList.HORIZONTAL_WRAP);
+                displayList.setName("displayList");
+                jScrollPaneFiles.setViewportView(displayList);
+            }
+        }
+    }
+>>>>>>> origin/GUI
 }
